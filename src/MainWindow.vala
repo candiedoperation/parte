@@ -56,7 +56,8 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         add(hdy_grid);
         show_all();
         
-        var gtfcalc = new Parte.Utils.GTFStandard (1920, 1080, 60.00);
+        var gtfcalc = new Parte.Utils.GTFStandard (1920, 1080, 29.97);
+        print (gtfcalc.GET_MODELINE ());
     }
 }
 

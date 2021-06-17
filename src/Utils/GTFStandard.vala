@@ -57,7 +57,7 @@ public class Parte.Utils.GTFStandard : GLib.Object {
     public double OPT_REFR_RATE { get; set; }
     
     public GTFStandard (double X_RESOL, double Y_RESOL, double SCR_RATE) {        
-        //APPLY VESA STANDARDS
+        //APPLY GTF STANDARDS
         VERT_FLYBACK = 550.000; //Microseconds
         VERT_SYNC_LINES = 3.000; //Lines
         RND_FRONT_PORCH = 1.000; //Units
@@ -70,21 +70,32 @@ public class Parte.Utils.GTFStandard : GLib.Object {
         this.notify.connect (() => { if (OPT_HOR_RESOL != 0 && OPT_VERT_RESOL != 0 && OPT_REFR_RATE != 0) { CALC_GTF_STD (); } });        
         
         //APPLY USER SETTINGS
-        OPT_HOR_RESOL = X_RESOL;
-        OPT_VERT_RESOL = Y_RESOL;
+        OPT_HOR_RESOL = (Math.round (X_RESOL / CHAR_CELL_GRANL)) * CHAR_CELL_GRANL;
+        OPT_VERT_RESOL = (Math.round (Y_RESOL / CHAR_CELL_GRANL)) * CHAR_CELL_GRANL;
         OPT_REFR_RATE = SCR_RATE;
     }
     
     private void CALC_GTF_STD () {
         EST_HOR_PERIOD = ((1 / OPT_REFR_RATE) - VERT_FLYBACK / 1000000) / (OPT_VERT_RESOL + (2 * IGN_VERT_MARGIN) + RND_FRONT_PORCH + IGN_DISP_INTERLACE) * 1000000;
-        SYNC_BACK_PORCH = (VERT_FLYBACK / EST_HOR_PERIOD);
+        SYNC_BACK_PORCH = Math.round (VERT_FLYBACK / EST_HOR_PERIOD); /*ROUNDED TO NEAREST INTEGER*/
         BACK_LINE_PORCH = (SYNC_BACK_PORCH - VERT_SYNC_LINES);
         VERT_FIELD_LINES = (OPT_VERT_RESOL + IGN_VERT_MARGIN + IGN_VERT_MARGIN + SYNC_BACK_PORCH + IGN_DISP_INTERLACE + RND_FRONT_PORCH);
         EST_VERT_FIELD_RATE = 1 / EST_HOR_PERIOD / VERT_FIELD_LINES * 1000000;
         ACT_HOR_PERIOD = EST_HOR_PERIOD / (OPT_REFR_RATE / EST_VERT_FIELD_RATE);
         ACT_VERT_FREQ = 1 / ACT_HOR_PERIOD / VERT_FIELD_LINES * 1000000;
         ACT_PIXEL_NUM = OPT_HOR_RESOL; //ADDITION OF HORIZONTAL MARGINS ARE EXEMPTED
-        IDE_BLANK_DUTY = 25.528; //CALCULATED USING DEFAULT VALUES
+        
+        /*
+            Apply Blanking Time Formula with default Values:
+                M (Gradient) = 600
+                C (Offset) = 40
+                K (Blank Time Scale Factor) = 128
+                J (Scaling Factor Weighting) = 20
+                Blanking Time Formula = C - ( M / Fh ) 
+        */
+        
+        IDE_BLANK_DUTY = (((40 - 20) * 128 / 256) + 20) - ((300) * ACT_HOR_PERIOD / 1000);
+        
         DISP_BLANK_TIME = Math.round ((ACT_PIXEL_NUM * IDE_BLANK_DUTY / (100 - IDE_BLANK_DUTY) / (2 * CHAR_CELL_GRANL))) * (2 * CHAR_CELL_GRANL); /*ROUNDED OF TO NEAREST CHAR_CELL_GRANL*/
         TOT_LINE_PIXELS = (ACT_PIXEL_NUM + DISP_BLANK_TIME);
         EST_PIXEL_FREQ = (TOT_LINE_PIXELS / ACT_HOR_PERIOD);  
@@ -100,10 +111,14 @@ public class Parte.Utils.GTFStandard : GLib.Object {
         
         VER_SYNC_START = OPT_VERT_RESOL + RND_FRONT_PORCH;
         VER_SYNC_END = VER_SYNC_START + VERT_SYNC_LINES;
-        VER_HEIG_TOTAL = VER_SYNC_END + BACK_LINE_PORCH;
+        VER_HEIG_TOTAL = VER_SYNC_END + BACK_LINE_PORCH;        
         
         RANDR_MODE_NAME = (OPT_HOR_RESOL.to_string ()) + "x" + (OPT_VERT_RESOL.to_string ()) + "_" + (OPT_REFR_RATE.to_string ());
         if (OPT_REFR_RATE % 1 == 0) { RANDR_MODE_NAME += ".00"; }
+    }
+    
+    public string GET_MODELINE () {
+        return "Modeline \"" + RANDR_MODE_NAME + "\"  " + (EST_PIXEL_FREQ.to_string ()) + "  " + (OPT_HOR_RESOL.to_string ()) + " " + (HOR_SYNC_START.to_string ()) + " " + (HOR_SYNC_END.to_string ()) + " " + (HOR_WID_TOTAL.to_string ()) + "  " + (OPT_VERT_RESOL.to_string ()) + " " + (VER_SYNC_START.to_string ()) + " " + (VER_SYNC_END.to_string ()) + " " + (VER_HEIG_TOTAL.to_string ()) + "  " + "-HSync +Vsync\n";
     }
     
     construct {}
