@@ -31,6 +31,11 @@ public class Parte.App : Gtk.Application {
         window.application = this;
         window.window_position = Gtk.WindowPosition.CENTER;
         window.show_all ();
+        
+        window.hide_application.connect(() => {
+            this.hold ();
+            window.hide ();
+        });
     }
 }
 

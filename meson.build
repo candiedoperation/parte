@@ -9,12 +9,17 @@ executable(
     meson.project_name(),
     'src/Application.vala',
     'src/MainWindow.vala',
-    'src/Utils/GTFStandard.vala',          
+    'src/Widgets/ConnectionStatus.vala',
+    'src/Widgets/StatusMessage.vala',
+    'src/Utils/GTFStandard.vala',
+    'src/Utils/VirtualDisplayViewer.vala',
+    'src/Utils/VirtualDisplayEnvironment.vala',          
     dependencies: [
         dependency('gtk+-3.0'),
         dependency('glib-2.0'),
         dependency('granite'),
         dependency('libhandy-1'),
+        dependency('gtk-vnc-2.0'), #Ubuntu Package libgtk-vnc-2.0-dev
         dependency('xcb'),
         dependency('xcb-render'),#DEPENDS ON XCB        
         dependency('xcb-randr'), #DEPENDS ON XCB-RENDER
