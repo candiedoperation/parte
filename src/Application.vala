@@ -59,7 +59,7 @@ public class Parte.App : Gtk.Application {
             message_dialog.show_all ();
             message_dialog.response.connect ((response_id) => {
                 if (response_id == Gtk.ResponseType.ACCEPT) {
-                    virtual_display.reset_display_modes (); //GLITCHES IN THE FUNCTION
+                    virtual_display.reset_display_modes (); //FUNCTION DOES NOT WORK AS INTENDED
                     this.quit ();
                 } else if (response_id == Gtk.ResponseType.CLOSE) {
                     this.hold ();

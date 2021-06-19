@@ -27,7 +27,7 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
 
     public MainWindow () {
         Object (
-            resizable: true,
+            resizable: false,
             title: "Parte",
             window_position: Gtk.WindowPosition.CENTER,
             width_request: 860,
@@ -47,16 +47,25 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         var virt_display_view = new Parte.Utils.VirtualDisplayViewer ("192.168.30.47", "5900");
         
         Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
-        virtual_display.create_environment (1366, 768, 60);        
+        //virtual_display.create_environment (1920, 1080, 60);
+        
+        Granite.Widgets.Welcome welcome_parte = new Granite.Widgets.Welcome ("Parte", "Extend Displays, Seamlessly.");
+        welcome_parte.append ("emblem-shared", "Extend My Display", "Extend this display to some other Parte Display.");
+        welcome_parte.append ("video-display", "Use this as Secondary Display", "Use this as a secondary display for another computer.");
+        welcome_parte.append ("emblem-synchronized", "View Paired Displays", "View Displays which are paired to this Computer.");        
+        welcome_parte.append ("preferences-system", "Preferences", "View and Modify Parte Settings.");
         
         grid_main = new Gtk.Grid();
-        grid_main.attach (virt_display_view, 0, 0);
+        grid_main.attach (welcome_parte, 0, 0);
         
         hdy_header = new Hdy.HeaderBar ();
         hdy_header.title = "Parte";
         hdy_header.hexpand = true;
         hdy_header.show_close_button = true;
-        hdy_header.decoration_layout = "close:";       
+        hdy_header.decoration_layout = "close:";
+        
+        unowned Gtk.StyleContext hdy_header_context = hdy_header.get_style_context ();
+        hdy_header_context.add_class ("default-decoration");               
         
         hdy_grid = new Gtk.Grid ();
         hdy_grid.attach (hdy_header, 0, 0);

@@ -75,7 +75,7 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
                 if (output_info.name.up () == "VIRTUAL1") {
                     xcb_randr_connection.add_output_mode (output, create_display_mode ());
                     update_volatile_db ();                                         
-                    add_display_mode ();                                                        
+                    add_display_mode ();                                                      
                     break;
                 }
             }
@@ -129,6 +129,7 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
                 }
                 
                 //COMPLETED ADDING ALL MODES TO VIRTUAL1
+                //TRY RESTARTING WINDOW MANAGER HERE
                 break;                
             }
         }        
