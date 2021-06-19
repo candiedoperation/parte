@@ -19,16 +19,19 @@
 */
 
 public class Parte.MainWindow : Hdy.ApplicationWindow {
-    private static GLib.Settings settings;
-    private Gtk.Grid grid_main; 
+    //private static GLib.Settings settings;
+    private Gtk.Grid grid_main;
+    private Gtk.Grid hdy_grid;
+    private Hdy.HeaderBar hdy_header;
+    public signal void hide_application (); 
 
     public MainWindow () {
         Object (
             resizable: false,
             title: "Parte",
-            window_position: Gtk.WindowPosition.CENTER
-            //width_request: 1060,
-            //height_request: 750
+            window_position: Gtk.WindowPosition.CENTER,
+            width_request: 860,
+            height_request: 660
         );
     }
 
@@ -41,23 +44,47 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
             gtk_settings.gtk_application_prefer_dark_theme = granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
         });
         
-        grid_main = new Gtk.Grid();
+        var virt_display_view = new Parte.Utils.VirtualDisplayViewer ("192.168.30.47", "5900");
         
-        var hdy_header = new Hdy.HeaderBar ();
+        Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
+        //virtual_display.create_environment (1920, 1080, 60);
+        
+        Granite.Widgets.Welcome welcome_parte = new Granite.Widgets.Welcome ("Parte", "Extend Displays, Seamlessly.");
+        welcome_parte.append ("emblem-shared", "Extend My Display", "Extend this display to some other Parte Display.");
+        welcome_parte.append ("video-display", "Use this as Secondary Display", "Use this as a secondary display for another computer.");
+        welcome_parte.append ("emblem-synchronized", "View Paired Displays", "View Displays which are paired to this Computer.");        
+        welcome_parte.append ("preferences-system", "Preferences", "View and Modify Parte Settings.");
+        
+        grid_main = new Gtk.Grid();
+        grid_main.attach (welcome_parte, 0, 0);
+        
+        hdy_header = new Hdy.HeaderBar ();
         hdy_header.title = "Parte";
         hdy_header.hexpand = true;
         hdy_header.show_close_button = true;
-        hdy_header.decoration_layout = "close:";       
+        hdy_header.decoration_layout = "close:";
         
-        var hdy_grid = new Gtk.Grid ();
+        unowned Gtk.StyleContext hdy_header_context = hdy_header.get_style_context ();
+        hdy_header_context.add_class ("default-decoration");               
+        
+        hdy_grid = new Gtk.Grid ();
         hdy_grid.attach (hdy_header, 0, 0);
         hdy_grid.attach (grid_main, 0, 1);
         
+        virt_display_view.hide_application.connect(() => { hide_application(); });
+        
+        virt_display_view.request_fullscreen.connect(() => {
+            this.fullscreen ();
+            hdy_grid.remove (hdy_header);            
+        });
+        
+        virt_display_view.request_unfullscreen.connect(() => {
+            this.unfullscreen ();
+            hdy_grid.attach (hdy_header, 0, 0);            
+        });                 
+        
         add(hdy_grid);
         show_all();
-        
-        var gtfcalc = new Parte.Utils.GTFStandard (1920, 1080, 29.97);
-        print (gtfcalc.GET_MODELINE ());
     }
 }
 

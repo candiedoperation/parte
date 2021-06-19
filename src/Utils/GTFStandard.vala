@@ -50,7 +50,8 @@ public class Parte.Utils.GTFStandard : GLib.Object {
     public double VER_SYNC_START;
     public double VER_SYNC_END;
     public double VER_HEIG_TOTAL;
-    public string RANDR_MODE_NAME;   
+    public string RANDR_MODE_NAME;
+    public string PARTE_MODE_NAME;   
     
     public double OPT_HOR_RESOL { get; set; }
     public double OPT_VERT_RESOL { get; set; }
@@ -115,6 +116,8 @@ public class Parte.Utils.GTFStandard : GLib.Object {
         
         RANDR_MODE_NAME = (OPT_HOR_RESOL.to_string ()) + "x" + (OPT_VERT_RESOL.to_string ()) + "_" + (OPT_REFR_RATE.to_string ());
         if (OPT_REFR_RATE % 1 == 0) { RANDR_MODE_NAME += ".00"; }
+        
+        PARTE_MODE_NAME = "PARTE_" + RANDR_MODE_NAME;
     }
     
     public string GET_MODELINE () {
