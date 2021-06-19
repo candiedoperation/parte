@@ -37,6 +37,10 @@ public class Parte.App : Gtk.Application {
             window.hide ();
         });
     }
+    
+    private void reset_display_modes () {
+        
+    }
 }
 
 public static int main (string[] args) {
