@@ -21,21 +21,29 @@
 public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
     private Parte.Utils.GTFStandard gtime_f;
     private Parte.Utils.VolatileDataStore volatile_data_store;
+    private Xcb.RandR.GetScreenResourcesReply screen_resources; 
+    private Xcb.RandR.Connection xcb_randr_connection;
+    private Xcb.Window virt_display_window;
+    private Xcb.Connection xcb_connection;
+    
+    static VirtualDisplayEnvironment _instance = null;
+    public static VirtualDisplayEnvironment instance {
+        get {
+            if (_instance == null) {
+                _instance = new VirtualDisplayEnvironment ();
+            }
+            return _instance;
+        }
+    }        
         
     public VirtualDisplayEnvironment () {
         volatile_data_store = Parte.Utils.VolatileDataStore.instance;
-    }
-    
-    public void create_environment (double display_width, double display_height, double display_frequency) {
-        gtime_f = new Parte.Utils.GTFStandard (display_width, display_height, display_frequency);
                     
-        Xcb.Connection xcb_connection = new Xcb.Connection (); //Connect to X Window System
+        xcb_connection = new Xcb.Connection (); //Connect to X Window System
+        xcb_randr_connection = Xcb.RandR.get_connection (xcb_connection); //Create an Xcb.RandR Connection        
         Xcb.Setup xcb_setup = xcb_connection.get_setup (); //Get XCB Setup
         Xcb.ScreenIterator xcb_screen_iterator = xcb_setup.roots_iterator (); //Iterate available Screens
         Xcb.Screen xcb_screen = xcb_screen_iterator.data; //Get the first Screen
-        
-        Xcb.Window virt_display_window;
-        Xcb.RandR.Connection xcb_randr_connection = Xcb.RandR.get_connection (xcb_connection);        
         
         virt_display_window = xcb_connection.generate_id ();       
         xcb_connection.create_window (
@@ -52,27 +60,29 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
         );
         
         xcb_connection.flush ();
-        update_volatile_db (xcb_randr_connection.get_screen_resources_reply (xcb_randr_connection.get_screen_resources (virt_display_window)));        
         
+        screen_resources = xcb_randr_connection.get_screen_resources_reply (xcb_randr_connection.get_screen_resources (virt_display_window));
+        update_volatile_db ();        
+    }
+    
+    public void create_environment (double display_width, double display_height, double display_frequency) {
+        gtime_f = new Parte.Utils.GTFStandard (display_width, display_height, display_frequency);
+                    
         if (volatile_data_store.get_display_mode (gtime_f.PARTE_MODE_NAME) == "") {
-            print ("Adding New Display");
-            create_display_mode (virt_display_window, xcb_randr_connection, gtime_f);
-            update_volatile_db (xcb_randr_connection.get_screen_resources_reply (xcb_randr_connection.get_screen_resources (virt_display_window)));            
-        }
-        
-        Xcb.RandR.GetScreenResourcesReply screen_resources = xcb_randr_connection.get_screen_resources_reply (xcb_randr_connection.get_screen_resources (virt_display_window));
-        foreach (Xcb.RandR.Output output in screen_resources.outputs) {
-            Xcb.RandR.GetOutputInfoReply output_info = xcb_randr_connection.get_output_info_reply (xcb_randr_connection.get_output_info (output, screen_resources.config_timestamp));
-                      
-            if (output_info.name == "VIRTUAL1") {
-                Xcb.RandR.Output virt_display_output = output;
-                //xcb_randr_connection.add_output_mode (virt_display_output, virt_display_mode_reply.mode);                
-                break;
+            screen_resources = xcb_randr_connection.get_screen_resources_reply (xcb_randr_connection.get_screen_resources (virt_display_window));
+            foreach (Xcb.RandR.Output output in screen_resources.outputs) {
+                Xcb.RandR.GetOutputInfoReply output_info = xcb_randr_connection.get_output_info_reply (xcb_randr_connection.get_output_info (output, screen_resources.config_timestamp));
+                if (output_info.name.up () == "VIRTUAL1") {
+                    xcb_randr_connection.add_output_mode (output, create_display_mode ());
+                    update_volatile_db ();                                         
+                    add_display_mode ();                                                        
+                    break;
+                }
             }
         }
     }    
     
-    private void create_display_mode (Xcb.Window virt_display_window, Xcb.RandR.Connection xcb_randr_connection, Parte.Utils.GTFStandard gtime_f) {
+    private Xcb.RandR.Mode create_display_mode () {
         Xcb.RandR.ModeInfo virt_display_modeline = Xcb.RandR.ModeInfo () {
             dot_clock = (uint32) (gtime_f.EST_PIXEL_FREQ * 1e6), //dot_clock expects Hz (uint32 is 10 digits long) and not MHz as calculated in GTFStandard.vala
             width = (uint16) gtime_f.OPT_HOR_RESOL,
@@ -88,24 +98,43 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
             name_len = (uint16) gtime_f.PARTE_MODE_NAME.length          
         };
         
-        Xcb.RandR.CreateModeReply virt_display_mode_reply = xcb_randr_connection.create_mode_reply (xcb_randr_connection.create_mode (virt_display_window, virt_display_modeline, gtime_f.PARTE_MODE_NAME)); // Get the created mode from CreateModeReply                
+        Xcb.RandR.CreateModeReply virt_display_mode_reply = xcb_randr_connection.create_mode_reply (xcb_randr_connection.create_mode (virt_display_window, virt_display_modeline, gtime_f.PARTE_MODE_NAME)); // Get the created mode from CreateModeReply
+        return virt_display_mode_reply.mode;                
     }
     
-    private void reset_display_modes (Xcb.RandR.GetScreenResourcesReply screen_resources, Xcb.RandR.Connection xcb_randr_connection) {
+    public void reset_display_modes () {
         foreach (Xcb.RandR.Output output in screen_resources.outputs) {
             Xcb.RandR.GetOutputInfoReply output_info = xcb_randr_connection.get_output_info_reply (xcb_randr_connection.get_output_info (output, screen_resources.config_timestamp));          
-            if (output_info.name == "VIRTUAL1") {
-                foreach (Xcb.RandR.Mode mode in output_info.modes) {
+            if (output_info.name.up () == "VIRTUAL1") {
+                foreach (Xcb.RandR.Mode mode in output_info.modes) {                  
                     xcb_randr_connection.delete_output_mode (output, mode);
                     xcb_randr_connection.destroy_mode (mode);
                 }
-                                
-                break;
+                
+                //Destroyed All Modes
+                break;                
             }
         }        
     }
     
-    private void update_volatile_db (Xcb.RandR.GetScreenResourcesReply screen_resources) {
+    public void add_display_mode () {
+        screen_resources = xcb_randr_connection.get_screen_resources_reply (xcb_randr_connection.get_screen_resources (virt_display_window));    
+        foreach (Xcb.RandR.Output output in screen_resources.outputs) {
+            Xcb.RandR.GetOutputInfoReply output_info = xcb_randr_connection.get_output_info_reply (xcb_randr_connection.get_output_info (output, screen_resources.config_timestamp));          
+            if (output_info.name.up () == "VIRTUAL1") {
+                foreach (Xcb.RandR.Mode mode in output_info.modes) {
+                    print ("ADDING OUTPUT MODES\n");                   
+                    xcb_randr_connection.add_output_mode (output, mode);
+                    xcb_randr_connection.destroy_mode (mode);
+                }
+                
+                //COMPLETED ADDING ALL MODES TO VIRTUAL1
+                break;                
+            }
+        }        
+    }
+    
+    private void update_volatile_db () {
         for (int iterator = 0; iterator < screen_resources.mode_names.length; iterator++) {
             if (screen_resources.mode_names [iterator].has_prefix ("PARTE_")) {
                 volatile_data_store.add_display_mode (screen_resources.mode_names [iterator], screen_resources.modes [iterator].id.to_string ());

@@ -26,6 +26,7 @@ public class Parte.App : Gtk.Application {
 
     public override void activate () {
         Hdy.init (); //Initializing LibHandy
+        Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance; //Initializing Virtual Display Module
         
         var window = new Parte.MainWindow ();
         window.application = this;
@@ -36,10 +37,40 @@ public class Parte.App : Gtk.Application {
             this.hold ();
             window.hide ();
         });
-    }
-    
-    private void reset_display_modes () {
         
+        window.delete_event.connect(() => {            
+            var message_dialog = new Granite.MessageDialog.with_image_from_icon_name (
+                "Close Parte?",
+                "Closing Parte will disconnect all external monitors and prevent this monitor from being discovered.",
+                "dialog-warning",
+                Gtk.ButtonsType.NONE                
+            );
+            
+            message_dialog.transient_for = window;
+
+            var close_app_button = new Gtk.Button.with_label ("Close Parte");
+            close_app_button.get_style_context ().add_class (Gtk.STYLE_CLASS_DESTRUCTIVE_ACTION);
+            message_dialog.add_action_widget (close_app_button, Gtk.ResponseType.ACCEPT);
+            
+            var hide_app_button = new Gtk.Button.with_label ("Run In Background");
+            hide_app_button.get_style_context ().add_class (Gtk.STYLE_CLASS_SUGGESTED_ACTION);
+            message_dialog.add_action_widget (hide_app_button, Gtk.ResponseType.CLOSE);            
+
+            message_dialog.show_all ();
+            message_dialog.response.connect ((response_id) => {
+                if (response_id == Gtk.ResponseType.ACCEPT) {
+                    virtual_display.reset_display_modes (); //GLITCHES IN THE FUNCTION
+                    this.quit ();
+                } else if (response_id == Gtk.ResponseType.CLOSE) {
+                    this.hold ();
+                    window.hide ();                    
+                } 
+                
+                message_dialog.destroy ();
+            });
+            
+            return true;                        
+        });
     }
 }
 
