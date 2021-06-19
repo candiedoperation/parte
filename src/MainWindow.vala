@@ -45,7 +45,7 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         });
         
         var virt_display_view = new Parte.Utils.VirtualDisplayViewer ("192.168.30.47", "5900");
-        var vde = new Parte.Utils.VirtualDisplayEnvironment (1200, 900, 60);        
+        var vde = new Parte.Utils.VirtualDisplayEnvironment (1920, 1080, 60);        
         
         grid_main = new Gtk.Grid();
         grid_main.attach (virt_display_view, 0, 0);

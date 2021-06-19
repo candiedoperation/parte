@@ -30,7 +30,6 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
         Xcb.Window virt_display_window;
         Xcb.RandR.Connection xcb_randr_connection = Xcb.RandR.get_connection (xcb_connection);        
         Xcb.RandR.ModeInfo virt_display_modeline = Xcb.RandR.ModeInfo () {
-            id = (uint32) xcb_connection.generate_id (),
             dot_clock = (uint32) gtime_f.EST_PIXEL_FREQ,
             width = (uint16) gtime_f.OPT_HOR_RESOL,
             hsync_start = (uint16) gtime_f.HOR_SYNC_START,
@@ -42,7 +41,7 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
             vsync_end = (uint16) gtime_f.VER_SYNC_END,
             vtotal = (uint16) gtime_f.VER_HEIG_TOTAL,
             mode_flags = Xcb.RandR.ModeFlag.HSYNC_NEGATIVE + Xcb.RandR.ModeFlag.VSYNC_POSITIVE,
-            name_len = (uint16) gtime_f.RANDR_MODE_NAME            
+            name_len = (uint16) gtime_f.PARTE_MODE_NAME.length          
         };
         
         virt_display_window = xcb_connection.generate_id ();       
@@ -62,11 +61,8 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
         xcb_connection.flush ();
         
         Xcb.RandR.GetScreenResourcesReply screen_resources = xcb_randr_connection.get_screen_resources_reply (xcb_randr_connection.get_screen_resources (virt_display_window));
-        loopup (screen_resources);
-        print ("-------------");
-        Xcb.RandR.CreateModeReply virt_display_mode_reply = xcb_randr_connection.create_mode_reply (xcb_randr_connection.create_mode (virt_display_window, screen_resources.modes [2], gtime_f.RANDR_MODE_NAME)); // Get the created mode from CreateModeReply
-        screen_resources = xcb_randr_connection.get_screen_resources_reply (xcb_randr_connection.get_screen_resources (virt_display_window));
-        loopup (screen_resources);        
+        Xcb.RandR.CreateModeReply virt_display_mode_reply = xcb_randr_connection.create_mode_reply (xcb_randr_connection.create_mode (virt_display_window, virt_display_modeline, gtime_f.PARTE_MODE_NAME)); // Get the created mode from CreateModeReply
+        screen_resources = xcb_randr_connection.get_screen_resources_reply (xcb_randr_connection.get_screen_resources (virt_display_window));      
         Xcb.RandR.Output virt_display_output;
         
         foreach (Xcb.RandR.Output output in screen_resources.outputs) {
@@ -77,14 +73,7 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
                 break;
             }
         }
-    }
-    
-    
-    private void loopup (Xcb.RandR.GetScreenResourcesReply data) {
-        foreach (var modename in data.mode_names) {
-            print ("\n" + modename + "\n");
-        }
-    }    
+    }   
     
     construct {
         //Ask Graphic Card to create Virtual Display `nano /usr/share/X11/xorg.conf.d/20-intel.conf`
