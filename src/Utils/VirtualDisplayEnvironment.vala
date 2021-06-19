@@ -30,7 +30,7 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
         Xcb.Window virt_display_window;
         Xcb.RandR.Connection xcb_randr_connection = Xcb.RandR.get_connection (xcb_connection);        
         Xcb.RandR.ModeInfo virt_display_modeline = Xcb.RandR.ModeInfo () {
-            dot_clock = (uint32) gtime_f.EST_PIXEL_FREQ,
+            dot_clock = (uint32) (gtime_f.EST_PIXEL_FREQ * 1e6), //dot_clock expects Hz (uint32 is 10 digits long) and not MHz as calculated in GTFStandard.vala
             width = (uint16) gtime_f.OPT_HOR_RESOL,
             hsync_start = (uint16) gtime_f.HOR_SYNC_START,
             hsync_end = (uint16) gtime_f.HOR_SYNC_END,
