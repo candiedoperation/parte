@@ -27,6 +27,7 @@ public class Parte.App : Gtk.Application {
     public override void activate () {
         Hdy.init (); //Initializing LibHandy
         Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance; //Initializing Virtual Display Module
+        Parte.Utils.DisplayNetwork display_network = Parte.Utils.DisplayNetwork.instance;
         
         var window = new Parte.MainWindow ();
         window.application = this;
@@ -60,6 +61,7 @@ public class Parte.App : Gtk.Application {
             message_dialog.response.connect ((response_id) => {
                 if (response_id == Gtk.ResponseType.ACCEPT) {
                     virtual_display.reset_display_modes (); //FUNCTION DOES NOT WORK AS INTENDED
+                    display_network.close_socket_server ();
                     this.quit ();
                 } else if (response_id == Gtk.ResponseType.CLOSE) {
                     this.hold ();

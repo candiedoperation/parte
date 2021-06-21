@@ -20,8 +20,7 @@
 
 public class Parte.MainWindow : Hdy.ApplicationWindow {
     //private static GLib.Settings settings;
-    private Gtk.Grid hdy_grid;
-    private Gtk.Grid network_alert;    
+    private Gtk.Grid hdy_grid;   
     private Gtk.Button back_button;
     private Hdy.HeaderBar hdy_header;
     private Hdy.Carousel main_carousel;

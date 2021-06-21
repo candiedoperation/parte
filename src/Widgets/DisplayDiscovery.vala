@@ -88,22 +88,18 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
     
     private void manual_connection () {
         Gtk.Label IP_Addresss = new Gtk.Label (display_network.get_connection_ip ());
-        IP_Addresss.vexpand = true;
-        IP_Addresss.yalign = (float) 0.5;
+        IP_Addresss.hexpand = true;
+        IP_Addresss.xalign = (float) 0.5;
         IP_Addresss.get_style_context ().add_class (Granite.STYLE_CLASS_H1_LABEL);
         
         Gtk.Label info_label = new Gtk.Label ("Enter the above IP Address in the other Computer by Clicking the <b>Connect Manually</b> Button");
         info_label.use_markup = true;
         info_label.wrap = true;
-        info_label.max_width_chars = 30;
-        
-        Gtk.Image dialog_icon = new Gtk.Image ();
-        dialog_icon.gicon = new ThemedIcon ("preferences-system-network");
-        dialog_icon.pixel_size = 64;
+        info_label.width_chars = 40;
+        info_label.max_width_chars = 40;
         
         Gtk.Grid top_grid = new Gtk.Grid ();
         top_grid.column_spacing = 10;        
-        top_grid.attach (dialog_icon, 0, 0);
         top_grid.attach (IP_Addresss, 1, 0);        
         
         Gtk.Grid man_info_grid = new Gtk.Grid ();

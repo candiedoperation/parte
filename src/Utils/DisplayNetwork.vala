@@ -20,6 +20,7 @@
 
 public class Parte.Utils.DisplayNetwork : GLib.Object {
     private NetworkMonitor network_monitor;
+    private GLib.SocketService service;
     public signal void network_connected ();
     public signal void network_disconnected ();
     
@@ -39,11 +40,43 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         check_network_status (network_monitor.network_available);
         
         //INITIALIZE SOCKET COMMUNICATION CAPABILITIES
-        
+        try {
+            create_socket_server ();        
+        } catch (GLib.Error e) {
+            
+        }
         
         network_monitor.network_changed.connect ((network_status) => {
             check_network_status (network_status);
         });
+    }
+    
+    public void create_socket_server () throws GLib.Error {
+		service = new GLib.SocketService ();
+		service.add_inet_port (5899, this);
+		service.incoming.connect ((connection, source_object) => {
+		    parse_client_message (connection, new Cancellable ());
+		    return false;
+		});
+		
+		service.start ();		
+    }
+    
+    public void send_socket_message () {
+        
+    }
+    
+    private async void parse_client_message (SocketConnection connection, Cancellable cancellable) throws GLib.IOError {
+		DataInputStream istream = new DataInputStream (connection.input_stream);
+
+		// Get the received message:
+		string message = yield istream.read_line_async (Priority.DEFAULT, cancellable);
+		message._strip ();
+		print ("Received: %s\n", message);		        
+    }
+    
+    public void close_socket_server () {
+        service.stop ();
     }
     
     public void request_network_check () {
@@ -60,16 +93,21 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     
     public string get_connection_ip () {
         string auto_ip = "";
-        NM.Client nm_client = new NM.Client ();
-        nm_client.get_devices ().foreach((device) => {
-            device.get_ip4_config ().get_addresses ().foreach((ip_addr) => {
-                GLib.InetAddress current_ip = new GLib.InetAddress.from_string (ip_addr.get_address ());
-                if (current_ip.is_loopback == false) {
-                    print (ip_addr.get_address () + "\n");
-                    (auto_ip != "") ? auto_ip = auto_ip : auto_ip = ip_addr.get_address ();                    
-                }
-            });
-        });
+        try {
+            NM.Client nm_client = new NM.Client ();
+            nm_client.get_devices ().foreach((device) => {
+                device.get_ip4_config ().get_addresses ().foreach((ip_addr) => {
+                    GLib.InetAddress current_ip = new GLib.InetAddress.from_string (ip_addr.get_address ());
+                    if (current_ip.is_loopback == false) {
+                        print (ip_addr.get_address () + "\n");
+                        (auto_ip != "") ? auto_ip = auto_ip : auto_ip = ip_addr.get_address ();                    
+                    }
+                });
+            });            
+        } catch (GLib.Error e) {
+            
+        }
+        
         return auto_ip;        
     }
     
