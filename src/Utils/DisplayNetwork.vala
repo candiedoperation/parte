@@ -38,6 +38,9 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         network_monitor = NetworkMonitor.get_default ();
         check_network_status (network_monitor.network_available);
         
+        //INITIALIZE SOCKET COMMUNICATION CAPABILITIES
+        
+        
         network_monitor.network_changed.connect ((network_status) => {
             check_network_status (network_status);
         });
@@ -53,6 +56,21 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         } else {
             network_connected ();
         }        
+    }
+    
+    public string get_connection_ip () {
+        string auto_ip = "";
+        NM.Client nm_client = new NM.Client ();
+        nm_client.get_devices ().foreach((device) => {
+            device.get_ip4_config ().get_addresses ().foreach((ip_addr) => {
+                GLib.InetAddress current_ip = new GLib.InetAddress.from_string (ip_addr.get_address ());
+                if (current_ip.is_loopback == false) {
+                    print (ip_addr.get_address () + "\n");
+                    (auto_ip != "") ? auto_ip = auto_ip : auto_ip = ip_addr.get_address ();                    
+                }
+            });
+        });
+        return auto_ip;        
     }
     
     construct {}

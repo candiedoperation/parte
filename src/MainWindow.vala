@@ -74,7 +74,7 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         main_carousel.insert (display_finder, -1);
         
         Gtk.Image network_alert = new Gtk.Image ();
-        network_alert.gicon = new ThemedIcon ("network-error");
+        network_alert.gicon = new ThemedIcon ("network-wired-disconnected");
         network_alert.pixel_size = 28;
         network_alert.set_tooltip_text ("Network Disconnected");               
         
@@ -113,7 +113,9 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         main_carousel.page_changed.connect ((current_page) => {
             switch (current_page) {
                 case 1: {
-                    Gtk.Button back_button = new Gtk.Button ();
+                    back_button.destroy ();
+                    
+                    back_button = new Gtk.Button ();
                     back_button.label = "Home";
                     back_button.get_style_context ().add_class (Granite.STYLE_CLASS_BACK_BUTTON);
                     

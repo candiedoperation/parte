@@ -25,8 +25,9 @@ executable(
         dependency('libhandy-1'),
         dependency('json-glib-1.0'),
         dependency('gtk-vnc-2.0'), #Ubuntu Package libgtk-vnc-2.0-dev
+        dependency('libnm'),
         dependency('xcb'),
-        dependency('xcb-render'),#DEPENDS ON XCB        
+        dependency('xcb-render'),#DEPENDS ON XCB                
         dependency('xcb-randr'), #DEPENDS ON XCB-RENDER
         meson.get_compiler('c').find_library('libm', required : true), #NEEDED FOR ROUNDING FUNCTIONS TO WORK IN GTFStandard.vala              
     ],
