@@ -21,6 +21,7 @@
 public class Parte.Utils.DisplayNetwork : GLib.Object {
     private NetworkMonitor network_monitor;
     private GLib.SocketService service;
+    private string [] 
     public signal void network_connected ();
     public signal void network_disconnected ();
     
@@ -72,7 +73,16 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
 		// Get the received message:
 		string message = yield istream.read_line_async (Priority.DEFAULT, cancellable);
 		message._strip ();
-		print ("Received: %s\n", message);		        
+		
+		if (message.has_prefix ("DISC:")) {
+		    //SECONDARY DISPLAY DISCOVERY
+		} else if (message.has_prefix ("REQT:")) {
+		    //CHK PAIRED DEVICE LIST
+		} else if (message.has_prefix ("DISP:")) {
+		    //SECONDARY DISPLAY INFORMATION
+		} else {
+		    //MESSAGE REJECTED
+		}
     }
     
     public void close_socket_server () {
