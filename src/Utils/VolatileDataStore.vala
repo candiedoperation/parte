@@ -20,6 +20,7 @@
 
 public class Parte.Utils.VolatileDataStore : GLib.Object {    
     private Json.Object data_store;
+    public signal void display_list_refreshed (Json.Object display_data);
     
     static VolatileDataStore _instance = null;
     public static VolatileDataStore instance {
@@ -47,7 +48,7 @@ public class Parte.Utils.VolatileDataStore : GLib.Object {
     public void remove_display_mode (string mode_name) {
         Json.Object display_modes = data_store.get_object_member ("display-modes");
         display_modes.remove_member (mode_name);
-        display_modes.set_object_member ("display-modes", display_modes);
+        data_store.set_object_member ("display-modes", display_modes);
     }
     
     public string get_display_mode (string mode_name) {
@@ -56,8 +57,36 @@ public class Parte.Utils.VolatileDataStore : GLib.Object {
     }
     
     public void add_nearby_display (string IP_Address, string display_uuid, string display_name) {
+        Json.Object display_info = new Json.Object ();
+        display_info.set_string_member ("display-uuid", display_uuid);
+        display_info.set_string_member ("display-name", display_name);
+
         Json.Object nearby_displays = data_store.get_object_member ("display-nearby");
-        //nearby_displays.set_string_member --> TO CONTINUE 
+        nearby_displays.set_object_member (IP_Address, display_info);
+        data_store.set_object_member ("display-nearby", nearby_displays);
+        
+        display_list_refreshed (nearby_displays);
+    }
+    
+    public void remove_nearby_display (string IP_Address) {
+        Json.Object nearby_displays = data_store.get_object_member ("display-nearby");
+        nearby_displays.remove_member (IP_Address);
+        data_store.set_object_member ("display-nearby", nearby_displays);
+    }
+    
+    public string [] get_nearby_display (string IP_Address) {
+        Json.Object nearby_displays = data_store.get_object_member ("display-nearby");
+        if (nearby_displays.get_object_member (IP_Address) == null) { 
+            return ({ "" }); 
+        } else { 
+            return (
+                { 
+                   IP_Address, 
+                   nearby_displays.get_object_member (IP_Address).get_string_member ("display-uuid"), 
+                   nearby_displays.get_object_member (IP_Address).get_string_member ("display-name") 
+                }
+            ); 
+        }
     }
     
     construct {}

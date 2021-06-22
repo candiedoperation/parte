@@ -21,7 +21,7 @@
 public class Parte.Utils.DisplayNetwork : GLib.Object {
     private NetworkMonitor network_monitor;
     private GLib.SocketService service;
-    private string [] 
+    private Parte.Utils.VolatileDataStore volatile_data_store;
     public signal void network_connected ();
     public signal void network_disconnected ();
     
@@ -36,6 +36,8 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     }
     
     public DisplayNetwork () {
+        volatile_data_store = Parte.Utils.VolatileDataStore.instance;
+        
         //Check Network Connection Status and signal Listeners
         network_monitor = NetworkMonitor.get_default ();
         check_network_status (network_monitor.network_available);
@@ -44,7 +46,8 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         try {
             create_socket_server ();        
         } catch (GLib.Error e) {
-            
+            print ("ERR: FAILED TO INITIALIZE COMMUNICATION SOCKET");
+            //THROW ERROR TO USER
         }
         
         network_monitor.network_changed.connect ((network_status) => {
@@ -67,7 +70,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         
     }
     
-    private async void parse_client_message (SocketConnection connection, Cancellable cancellable) throws GLib.IOError {
+    private async void parse_client_message (SocketConnection connection, Cancellable cancellable) throws GLib.IOError, GLib.Error {
 		DataInputStream istream = new DataInputStream (connection.input_stream);
 
 		// Get the received message:
@@ -76,6 +79,12 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
 		
 		if (message.has_prefix ("DISC:")) {
 		    //SECONDARY DISPLAY DISCOVERY
+		    Json.Object display_info = new Json.Object ();
+		    display_info = Json.from_string (message.replace ("DISC:", "")).get_object ();
+		    display_info.get_members ().foreach ((member) => {
+		        volatile_data_store.add_nearby_display (member, display_info.get_object_member (member).get_string_member ("display-uuid"), display_info.get_object_member (member).get_string_member ("display-name"));
+		    });
+		    
 		} else if (message.has_prefix ("REQT:")) {
 		    //CHK PAIRED DEVICE LIST
 		} else if (message.has_prefix ("DISP:")) {

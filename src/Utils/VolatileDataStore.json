@@ -1,14 +1,14 @@
 /*
-    THIS FILE NEED NOT BE INCLUDED IN COMPILE, 
-    BUILDING OR IN THE PRODUCTION VERSION OF 
-    THE APPLICATION.
+    THIS FILE SHOULD NOT BE INCLUDED IN COMPILING, 
+    BUILDING OR IN THE PRODUCTION VERSION OF THIS 
+    APPLICATION.
 
     THIS FILE IS SOLELY FOR UNDERSTANDING THE
     JSON DATA STORAGE MODEL FOR THIS APPLICATION.
     BELOW DATA IS JUST AN EXAMPLE AND NOT REAL
     INFORMATION.
     
-    `JSON STORAGE MODEL REFERS`` TO
+    `JSON STORAGE MODEL REFERS` TO
     VolatileDataStore.vala
     
     `BELOW DATA` REFERS TO UNCOMMENTED LINES IN
@@ -44,17 +44,17 @@
     
     "display-nearby": {
         "192.168.30.236": {
-            "display_uuid": "123e4567-e89b-12d3-a456-426614174000",
+            "display-uuid": "123e4567-e89b-12d3-a456-426614174000",
             "display-name": "Jeremy's Computer"
         },
         
         "192.168.30.132": {
-            "display_uuid": "123j4567-p45b-12fk-a163-938483174000",
+            "display-uuid": "123j4567-p45b-12fk-a163-938483174000",
             "display-name": "Mark PC"            
         },
         
         "192.168.30.18": {
-            "display_uuid": "123pk367-pkci-a9jp-p14r-248492849000",
+            "display-uuid": "123pk367-pkci-a9jp-p14r-248492849000",
             "display-name": "Raspberry Pi 4"            
         }
     }

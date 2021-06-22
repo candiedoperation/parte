@@ -19,8 +19,10 @@
 */
 
 public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
+    private Gtk.ListBox display_list;
     private Granite.Dialog manual_connection_dialog;
     private Parte.Utils.DisplayNetwork display_network;
+    private Parte.Utils.VolatileDataStore volatile_data_store;
     
     static DisplayDiscovery _instance = null;
     public static DisplayDiscovery instance {
@@ -38,8 +40,10 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
     
     construct { 
         display_network = Parte.Utils.DisplayNetwork.instance;
+        volatile_data_store = Parte.Utils.VolatileDataStore.instance;
+        volatile_data_store.display_list_refreshed.connect ((signal_handler, signal_data) => { update_display_list (signal_data); });
                        
-        var connection_label = new Gtk.Label ("Pair a Display");
+        var connection_label = new Gtk.Label ("Connect to Display");
         connection_label.xalign = (float) 0.0;
         connection_label.get_style_context ().add_class (Granite.STYLE_CLASS_H2_LABEL);
         
@@ -57,7 +61,7 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
         label_grid.attach (connection_label, 0, 0);
         label_grid.attach (help_label, 1, 0);
         
-        Gtk.ListBox display_list = new Gtk.ListBox ();
+        display_list = new Gtk.ListBox ();
         display_list.hexpand = true;
         display_list.vexpand = true;
         
@@ -84,6 +88,13 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
         
         add (device_discovery);
         show_all ();
+    }
+    
+    private void update_display_list (Json.Object nearby_displays) {
+        display_list.get_children ().foreach ((child) => { child.destroy (); });
+        nearby_displays.get_members ().foreach ((display) => {
+            display_list.insert (new Parte.Widgets.DisplayPairRow (nearby_displays.get_object_member (display).get_string_member ("display-name")), -1);
+        });
     }
     
     private void manual_connection () {
