@@ -65,11 +65,16 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
         display_list.hexpand = true;
         display_list.vexpand = true;
         
+        Gtk.ScrolledWindow scrollable_list = new Gtk.ScrolledWindow (null, null);
+        scrollable_list.add (display_list);
+        scrollable_list.hexpand = true;
+        scrollable_list.vexpand = true;        
+        
         Gtk.Frame listbox_border = new Gtk.Frame ("");
         listbox_border.get_label_widget ().destroy ();
         listbox_border.hexpand = true;
         listbox_border.vexpand = true;        
-        listbox_border.add (display_list);
+        listbox_border.add (scrollable_list);
         
         Gtk.Overlay window_overlay = new Gtk.Overlay ();
         window_overlay.add (listbox_border);
