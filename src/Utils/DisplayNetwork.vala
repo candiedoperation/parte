@@ -62,12 +62,48 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
 		    parse_client_message (connection, new Cancellable ());
 		    return false;
 		});
-		
-		service.start ();		
+
+		service.start ();
+		broadcast_this_display ();
     }
     
-    public void send_socket_message () {
+    public void broadcast_this_display () {
+        string current_ip = get_connection_ip ();
+        Json.Object this_display_info = new Json.Object ();
+        this_display_info.set_string_member ("display-uuid", "123456"); //GET DEFINED UUID FROM DB
+        this_display_info.set_string_member ("display-name", "PC Name"); //GET COMPUTER NAME FROM OS INFO
         
+        Json.Object this_display = new Json.Object ();
+        this_display.set_object_member (current_ip, this_display_info);
+        
+        Json.Node this_display_node = new Json.Node (Json.NodeType.OBJECT);
+        this_display_node.set_object (this_display);
+        
+        string beacon_message = Json.to_string (this_display_node, false); //No Pretty Printing
+        
+        int device = 1;
+        Thread<void> broadcast_thread = new Thread<void>.try ("broadcast_device_" + device.to_string (), () => { send_device_beacon (device, current_ip.substring (0, current_ip.last_index_of (".") + 1), beacon_message); });
+    }    
+    
+    public void send_device_beacon (int device, string subnet, string beacon_message = "") {
+        if (device < 255) {
+            print ("BROADCASTING: %s\n", subnet + device.to_string ());
+            Thread<void> broadcast_thread = new Thread<void>.try ("broadcast_device_" + (device + 1).to_string (), () => { send_device_beacon ((device + 1), subnet, beacon_message); });            
+        }
+        
+        //IPv4 ITERATOR, THIS IS A SYNCHRONOUS FUNCTION, USE OF Thread<void> RECOMMENDED
+        try {
+            SocketClient socket_client = new SocketClient ();
+            socket_client.timeout = 10; // PULLS ALL THREADS DOWN IN 10 SECONDS
+            SocketConnection socket_connection;
+
+            socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (subnet + device.to_string ()), 5899));
+            socket_connection.output_stream.write (beacon_message.data);            
+        } catch (GLib.Error e) {
+            print ("NET_DEVICE (%s): %s\n", device.to_string (), e.message);
+        } catch (GLib.IOError e) {
+            print ("NET_DEVICE (%s): %s\n", device.to_string (), e.message);
+        }        
     }
     
     private async void parse_client_message (SocketConnection connection, Cancellable cancellable) throws GLib.IOError, GLib.Error {
@@ -91,6 +127,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
 		    //SECONDARY DISPLAY INFORMATION
 		} else {
 		    //MESSAGE REJECTED
+		    print (message);
 		}
     }
     
