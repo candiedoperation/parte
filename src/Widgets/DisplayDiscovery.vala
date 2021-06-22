@@ -44,11 +44,11 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
         volatile_data_store.display_list_refreshed.connect ((signal_handler, signal_data) => { update_display_list (signal_data); });
                        
         var connection_label = new Gtk.Label ("Connect to Display");
+        connection_label.hexpand = true;
         connection_label.xalign = (float) 0.0;
         connection_label.get_style_context ().add_class (Granite.STYLE_CLASS_H2_LABEL);
         
         Gtk.Label help_label = new Gtk.Label ("<a href=''>Unable to Find your Device?</a>");
-        help_label.hexpand = true;
         help_label.xalign = (float) 1.0;
         help_label.yalign = (float) 1.0;
         help_label.use_markup = true;

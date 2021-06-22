@@ -79,7 +79,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         Json.Node this_display_node = new Json.Node (Json.NodeType.OBJECT);
         this_display_node.set_object (this_display);
         
-        string beacon_message = Json.to_string (this_display_node, false); //No Pretty Printing
+        string beacon_message = "BEAC:" + Json.to_string (this_display_node, false); //No Pretty Printing
         
         int device = 1;
         Thread<void> broadcast_thread = new Thread<void>.try ("broadcast_device_" + device.to_string (), () => { send_device_beacon (device, current_ip.substring (0, current_ip.last_index_of (".") + 1), beacon_message); });
@@ -113,10 +113,10 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
 		string message = yield istream.read_line_async (Priority.DEFAULT, cancellable);
 		message._strip ();
 		
-		if (message.has_prefix ("DISC:")) {
+		if (message.has_prefix ("BEAC:")) {
 		    //SECONDARY DISPLAY DISCOVERY
 		    Json.Object display_info = new Json.Object ();
-		    display_info = Json.from_string (message.replace ("DISC:", "")).get_object ();
+		    display_info = Json.from_string (message.replace ("BEAC:", "")).get_object ();
 		    display_info.get_members ().foreach ((member) => {
 		        volatile_data_store.add_nearby_display (member, display_info.get_object_member (member).get_string_member ("display-uuid"), display_info.get_object_member (member).get_string_member ("display-name"));
 		    });
