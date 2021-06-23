@@ -46,7 +46,8 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
         display_network = Parte.Utils.DisplayNetwork.instance;
         volatile_data_store = Parte.Utils.VolatileDataStore.instance;
         volatile_data_store.display_list_refreshed.connect ((signal_handler, signal_data) => { update_display_list (signal_data); });
-        current_ip = display_network.get_connection_ip (); //UPDATE ON NETWORK CHANGE        
+        current_ip = display_network.get_connection_ip (); //UPDATE ON NETWORK CHANGE
+        display_network.network_connected.connect (() => { current_ip = display_network.get_connection_ip (); });        
         list_array_helper = {};
                        
         var connection_label = new Gtk.Label ("Available Displays");
