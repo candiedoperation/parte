@@ -162,7 +162,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
                 SocketConnection socket_connection;
 
                 socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (display), 5899));
-                socket_connection.output_stream.write (("BDEL:" + display).data);            
+                socket_connection.output_stream.write (("BDEL:" + this_display_beacon).data);            
             } catch (GLib.Error e) {
                 print ("NET_DEVICE (%s): %s\n", display.to_string (), e.message);
             } catch (GLib.IOError e) {
