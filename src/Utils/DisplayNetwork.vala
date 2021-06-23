@@ -108,14 +108,14 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         }        
     }
     
-    private void send_reply_beacon (string IP_Address) {
+    private void send_reply_beacon (string IP_Address, string beacon_msg) {
         try {
             SocketClient socket_client = new SocketClient ();
             socket_client.timeout = 10;
             SocketConnection socket_connection;
 
             socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (IP_Address), 5899));
-            socket_connection.output_stream.write (("ACK_BEAC:" + this_display_beacon).data);            
+            socket_connection.output_stream.write (beacon_msg.data);            
         } catch (GLib.Error e) {
             print ("NET_DEVICE (%s) ACK_BEAC: %s\n", IP_Address, e.message);
         } catch (GLib.IOError e) {
@@ -124,36 +124,34 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     }
     
     private async void parse_client_message (SocketConnection connection, Cancellable cancellable) throws GLib.IOError, GLib.Error {
-		DataInputStream istream = new DataInputStream (connection.input_stream);
-		DataOutputStream ostream = new DataOutputStream (connection.output_stream);		
+		DataInputStream istream = new DataInputStream (connection.input_stream);		
 
-		// Get the received message:
 		string message = yield istream.read_line_async (Priority.DEFAULT, cancellable);
 		message._strip ();
 		
-		if (message.has_prefix ("BEAC:")) {
-		    Json.Object display_info = new Json.Object ();
-		    display_info = Json.from_string (message.substring (5)).get_object ();
-		    display_info.get_members ().foreach ((member) => {
-		        volatile_data_store.add_nearby_display (member, display_info.get_object_member (member).get_string_member ("display-uuid"), display_info.get_object_member (member).get_string_member ("display-name"));
-                //Thread<void> beacon_reply = new Thread<void>.try ("beacon_reply_" + member, () => { send_reply_beacon (member); });
-                ostream.put_string ("ACK_BEAC:" + this_display_beacon);		        
-		    });
-		} else if (message.has_prefix ("ACK_BEAC:")) {
-		    Json.Object display_info = new Json.Object ();
-		    display_info = Json.from_string (message.substring (9)).get_object ();
-		    display_info.get_members ().foreach ((member) => {
-		        volatile_data_store.add_nearby_display (member, display_info.get_object_member (member).get_string_member ("display-uuid"), display_info.get_object_member (member).get_string_member ("display-name"));
-		    });		
-		} else if (message.has_prefix ("REQT:")) {
-		    // GET REQUEST AND USE ACK_REQT TO ACKNOWLEDGE REQUEST AND STRT TO START STREAM
-		} else if (message.has_prefix ("BDEL:")) {
-		    volatile_data_store.remove_nearby_display (message.substring (5));
-		} else if (message.has_prefix ("DISP:")) {
-
-		} else {
-		    print (message);
-		}
+		if (message.has_prefix ("BEAC:")) { received_beacon (message); }
+        else if (message.has_prefix ("ACK_BEAC:")) { acknowledge_received_beacon (message); }
+		else if (message.has_prefix ("REQT:")) {} 
+		else if (message.has_prefix ("BDEL:")) { volatile_data_store.remove_nearby_display (message.substring (5)); } 
+		else if (message.has_prefix ("DISP:")) {} 
+		else { print ("Probable External Source: " + message); }
+    }
+    
+    private void received_beacon (string message) {
+        Json.Object display_info = new Json.Object ();
+        display_info = Json.from_string (message.substring (5)).get_object ();
+        display_info.get_members ().foreach ((member) => {
+            volatile_data_store.add_nearby_display (member, display_info.get_object_member (member).get_string_member ("display-uuid"), display_info.get_object_member (member).get_string_member ("display-name"));
+            Thread<void> beacon_reply = new Thread<void>.try ("beacon_reply_" + member, () => { send_reply_beacon (member, ("ACK_BEAC:" + this_display_beacon)); });		        
+        });        
+    }
+    
+    private void acknowledge_received_beacon (string message) {
+        Json.Object display_info = new Json.Object ();
+        display_info = Json.from_string (message.substring (9)).get_object ();
+        display_info.get_members ().foreach ((member) => {
+            volatile_data_store.add_nearby_display (member, display_info.get_object_member (member).get_string_member ("display-uuid"), display_info.get_object_member (member).get_string_member ("display-name"));
+        });        
     }
     
     public async void send_socket_message (string IP_Address, string message) {
