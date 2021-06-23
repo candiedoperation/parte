@@ -22,9 +22,11 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     private NetworkMonitor network_monitor;
     private GLib.SocketService service;
     private Parte.Utils.VolatileDataStore volatile_data_store;
+    private Gtk.Application application;
     private string this_display_beacon;
     public signal void network_connected ();
     public signal void network_disconnected ();
+    public signal void request_app_notification (GLib.Notification notification);
     
     static DisplayNetwork _instance = null;
     public static DisplayNetwork instance {
@@ -37,6 +39,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     }
     
     public DisplayNetwork () {
+        application = (Gtk.Application) GLib.Application.get_default ();
         volatile_data_store = Parte.Utils.VolatileDataStore.instance;
         
         //Check Network Connection Status and signal Listeners
@@ -108,7 +111,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         }        
     }
     
-    private void send_reply_beacon (string IP_Address, string beacon_msg) {
+    private void reply_device_beacon (string IP_Address, string beacon_msg) {
         try {
             SocketClient socket_client = new SocketClient ();
             socket_client.timeout = 10;
@@ -117,47 +120,75 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
             socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (IP_Address), 5899));
             socket_connection.output_stream.write (beacon_msg.data);            
         } catch (GLib.Error e) {
-            print ("NET_DEVICE (%s) ACK_BEAC: %s\n", IP_Address, e.message);
+            print ("NET_DEVICE (%s) SEND_MSG: %s\n", IP_Address, e.message);
         } catch (GLib.IOError e) {
-            print ("NET_DEVICE (%s) ACK_BEAC: %s\n", IP_Address, e.message);
+            print ("NET_DEVICE (%s) SEND_MSG: %s\n", IP_Address, e.message);
         }        
     }
     
     private async void parse_client_message (SocketConnection connection, Cancellable cancellable) throws GLib.IOError, GLib.Error {
-		DataInputStream istream = new DataInputStream (connection.input_stream);		
+		DataInputStream istream = new DataInputStream (connection.input_stream);
 
 		string message = yield istream.read_line_async (Priority.DEFAULT, cancellable);
 		message._strip ();
-		
+
 		if (message.has_prefix ("BEAC:")) { received_beacon (message); }
         else if (message.has_prefix ("ACK_BEAC:")) { acknowledge_received_beacon (message); }
-		else if (message.has_prefix ("REQT:")) {} 
+		else if (message.has_prefix ("REQT:")) { receive_connection_request (message); } 
 		else if (message.has_prefix ("BDEL:")) { volatile_data_store.remove_nearby_display (message.substring (5)); } 
 		else if (message.has_prefix ("DISP:")) {} 
 		else { print ("Probable External Source: " + message); }
     }
-    
+
     private void received_beacon (string message) {
         Json.Object display_info = new Json.Object ();
         display_info = Json.from_string (message.substring (5)).get_object ();
         display_info.get_members ().foreach ((member) => {
             volatile_data_store.add_nearby_display (member, display_info.get_object_member (member).get_string_member ("display-uuid"), display_info.get_object_member (member).get_string_member ("display-name"));
-            Thread<void> beacon_reply = new Thread<void>.try ("beacon_reply_" + member, () => { send_reply_beacon (member, ("ACK_BEAC:" + this_display_beacon)); });		        
-        });        
+            Thread<void> beacon_reply = new Thread<void>.try ("beacon_reply_" + member, () => { reply_device_beacon (member, ("ACK_BEAC:" + this_display_beacon)); });		        
+        });
     }
-    
+
     private void acknowledge_received_beacon (string message) {
         Json.Object display_info = new Json.Object ();
         display_info = Json.from_string (message.substring (9)).get_object ();
         display_info.get_members ().foreach ((member) => {
             volatile_data_store.add_nearby_display (member, display_info.get_object_member (member).get_string_member ("display-uuid"), display_info.get_object_member (member).get_string_member ("display-name"));
-        });        
+        });
     }
-    
-    public async void send_socket_message (string IP_Address, string message) {
-        
+
+    private void receive_connection_request (string message) {
+        Json.Object display_info = new Json.Object ();
+        display_info = Json.from_string (message.substring (5)).get_object ();        
+        if (check_pairing_status (display_info.get_object_member (display_info.get_members ().nth_data (0)).get_string_member ("display-uuid")) == true) {
+            //PROCEED CONNECTION WITHOUT CONFIRMATION
+        } else {
+            //snotify
+            GLib.SimpleAction allow_once = new GLib.SimpleAction ("allow-connect-once", null);
+            allow_once.activate.connect (() => { connection_permitted (message); });
+
+            GLib.SimpleAction allow_pair = new GLib.SimpleAction ("allow-connect-pair", null);
+            allow_pair.activate.connect (() => { pair_device (display_info.get_object_member (display_info.get_members ().nth_data (0)).get_string_member ("display-uuid")); connection_permitted (message); });
+            
+            application.add_action (allow_once);
+            application.add_action (allow_pair);            
+
+            GLib.Notification request_notification = new GLib.Notification ("display-requested");
+            request_notification.set_title ("Display Connection Request");
+            request_notification.set_body (display_info.get_object_member (display_info.get_members ().nth_data (0)).get_string_member ("display-name").substring (0, 15) + "… wants to use this computer's display as a second screen.");
+            request_notification.set_icon (new ThemedIcon ("network-wired"));
+            request_notification.add_button ("Pair and Allow", "app.allow-connect-pair");
+            request_notification.add_button ("Allow", "app.allow-connect-once");
+            request_notification.set_priority (GLib.NotificationPriority.URGENT);
+
+            application.send_notification ("display_network", request_notification);
+        }
     }
-    
+
+    public void connection_permitted (string message) {
+        // ASK MONITOR PARAMS FROM OTHER DEVICE AND NEGOTIATE FOR CONNECTION
+    }
+
     public void close_socket_server () {
         foreach (string display in volatile_data_store.get_nearby_displays ()) {
             try {
@@ -173,22 +204,30 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
                 print ("NET_DEVICE (%s): %s\n", display.to_string (), e.message);
             }            
         };
-        
+
         service.stop ();
     }
-    
+
     public void request_network_check () {
         check_network_status (network_monitor.network_available);
     }
-    
+
     private void check_network_status (bool network_available) {
         if (network_available == false) {
             network_disconnected ();
         } else {
             network_connected ();
-        }        
+        }
     }
     
+    private bool check_pairing_status (string display_uuid) {
+        return false;
+    }
+    
+    private void pair_device (string display_uuid) {
+        
+    }    
+
     public string get_connection_ip () {
         string auto_ip = "";
         try {
@@ -202,12 +241,19 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
                     }
                 });
             });            
-        } catch (GLib.Error e) {
-            
-        }
-        
+        } catch (GLib.Error e) {}
+
+        //Returning the Preffered IP Address
         return auto_ip;        
     }
     
+    public string get_this_display_beacon () {
+        return this_display_beacon;
+    }
+    
+    public void send_socket_message (string IP_Address, string message) {
+        reply_device_beacon (IP_Address, message);
+    }
+
     construct {}
 }

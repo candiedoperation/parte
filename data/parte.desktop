@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Parte
+GenericName=Second Screen Plugin
+Comment=Seamlessly Extend Display to other Computers
+Categories=Utility;Education;Office;Development;
+Exec=com.github.candiedoperation.parte
+Icon=com.github.candiedoperation.parte
+Terminal=false
+Type=Application
+Keywords=Display;Extend;Screen;Desktop;
+X-GNOME-UsesNotifications=true

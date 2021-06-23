@@ -23,6 +23,8 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
     private Granite.Dialog manual_connection_dialog;
     private Parte.Utils.DisplayNetwork display_network;
     private Parte.Utils.VolatileDataStore volatile_data_store;
+    private Gtk.Application application;
+    private string [] list_array_helper;
     
     static DisplayDiscovery _instance = null;
     public static DisplayDiscovery instance {
@@ -38,10 +40,12 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
                          
     }
     
-    construct { 
+    construct {
+        application = (Gtk.Application) GLib.Application.get_default ();
         display_network = Parte.Utils.DisplayNetwork.instance;
         volatile_data_store = Parte.Utils.VolatileDataStore.instance;
         volatile_data_store.display_list_refreshed.connect ((signal_handler, signal_data) => { update_display_list (signal_data); });
+        list_array_helper = {};
                        
         var connection_label = new Gtk.Label ("Connect to Display");
         connection_label.hexpand = true;
@@ -66,7 +70,7 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
         display_list.vexpand = true;
         
         display_list.row_activated.connect ((selected_display) => {
-            print (selected_display.get_index ().to_string ());
+            display_network.send_socket_message (list_array_helper [selected_display.get_index ()], ("REQT:" + display_network.get_this_display_beacon ()));
         });
         
         Gtk.ScrolledWindow scrollable_list = new Gtk.ScrolledWindow (null, null);
@@ -100,9 +104,11 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
     }
     
     private void update_display_list (Json.Object nearby_displays) {
+        list_array_helper = {};
         display_list.get_children ().foreach ((child) => { child.destroy (); });
         nearby_displays.get_members ().foreach ((display) => {
             display_list.insert (new Parte.Widgets.DisplayPairRow (nearby_displays.get_object_member (display).get_string_member ("display-name")), -1);
+            list_array_helper += display;
         });
     }
     
@@ -133,6 +139,7 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
         
         manual_connection_dialog.destroy ();
         manual_connection_dialog = new Granite.Dialog ();
+        manual_connection_dialog.transient_for = application.active_window;
         manual_connection_dialog.resizable = false;        
         
         manual_connection_dialog.get_content_area ().add (man_info_grid);

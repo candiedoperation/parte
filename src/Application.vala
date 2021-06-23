@@ -30,6 +30,11 @@ public class Parte.App : Gtk.Application {
     }
 
     public override void activate () {
+        if (get_windows () != null) {
+            get_windows ().data.present (); // present window if app is already running
+            return;
+        }
+            
         Hdy.init (); //Initializing LibHandy
         virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance; //Initializing Virtual Display Module
         display_network = Parte.Utils.DisplayNetwork.instance;
@@ -39,14 +44,13 @@ public class Parte.App : Gtk.Application {
         window.window_position = Gtk.WindowPosition.CENTER;
         window.show_all ();
         
-        initialize_exit_message ();        
-        
         window.hide_application.connect(() => {
             this.hold ();
             window.hide ();
         });
         
-        window.delete_event.connect(() => {            
+        window.delete_event.connect(() => {
+            initialize_exit_message ();                    
             message_dialog.show_all ();
             return true;                        
         });
