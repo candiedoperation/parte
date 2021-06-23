@@ -19,6 +19,11 @@
 */
 
 public class Parte.App : Gtk.Application {
+    private Parte.MainWindow window;
+    private Parte.Utils.VirtualDisplayEnvironment virtual_display;
+    private Parte.Utils.DisplayNetwork display_network;
+    private Granite.MessageDialog message_dialog;
+    
     construct {
         application_id = "com.github.candiedoperation.parte";
         flags = ApplicationFlags.FLAGS_NONE;
@@ -26,13 +31,15 @@ public class Parte.App : Gtk.Application {
 
     public override void activate () {
         Hdy.init (); //Initializing LibHandy
-        Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance; //Initializing Virtual Display Module
-        Parte.Utils.DisplayNetwork display_network = Parte.Utils.DisplayNetwork.instance;
+        virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance; //Initializing Virtual Display Module
+        display_network = Parte.Utils.DisplayNetwork.instance;
         
-        var window = new Parte.MainWindow ();
+        window = new Parte.MainWindow ();
         window.application = this;
         window.window_position = Gtk.WindowPosition.CENTER;
         window.show_all ();
+        
+        initialize_exit_message ();        
         
         window.hide_application.connect(() => {
             this.hold ();
@@ -40,40 +47,44 @@ public class Parte.App : Gtk.Application {
         });
         
         window.delete_event.connect(() => {            
-            var message_dialog = new Granite.MessageDialog.with_image_from_icon_name (
-                "Close Parte?",
-                "Closing Parte will disconnect all external monitors and prevent this monitor from being discovered.",
-                "dialog-warning",
-                Gtk.ButtonsType.NONE                
-            );
-            
-            message_dialog.transient_for = window;
-
-            var close_app_button = new Gtk.Button.with_label ("Close Parte");
-            close_app_button.get_style_context ().add_class (Gtk.STYLE_CLASS_DESTRUCTIVE_ACTION);
-            message_dialog.add_action_widget (close_app_button, Gtk.ResponseType.ACCEPT);
-            
-            var hide_app_button = new Gtk.Button.with_label ("Run In Background");
-            hide_app_button.get_style_context ().add_class (Gtk.STYLE_CLASS_SUGGESTED_ACTION);
-            message_dialog.add_action_widget (hide_app_button, Gtk.ResponseType.CLOSE);            
-
             message_dialog.show_all ();
-            message_dialog.response.connect ((response_id) => {
-                if (response_id == Gtk.ResponseType.ACCEPT) {
-                    virtual_display.reset_display_modes (); //FUNCTION DOES NOT WORK AS INTENDED
-                    display_network.close_socket_server ();
-                    this.quit ();
-                } else if (response_id == Gtk.ResponseType.CLOSE) {
-                    this.hold ();
-                    window.hide ();                    
-                } 
-                
-                message_dialog.destroy ();
-            });
-            
             return true;                        
         });
     }
+    
+    private void initialize_exit_message () {
+        message_dialog = new Granite.MessageDialog.with_image_from_icon_name (
+            "Close Parte?",
+            "Closing Parte will disconnect all external monitors and prevent this monitor from being discovered.",
+            "dialog-warning",
+            Gtk.ButtonsType.NONE                
+        );
+
+        message_dialog.transient_for = window;            
+
+        Gtk.Button close_app_button = new Gtk.Button.with_label ("Close Parte");
+        close_app_button.get_style_context ().add_class (Gtk.STYLE_CLASS_DESTRUCTIVE_ACTION);
+        message_dialog.add_action_widget (close_app_button, Gtk.ResponseType.ACCEPT);
+
+        Gtk.Button hide_app_button = new Gtk.Button.with_label ("Run In Background");
+        hide_app_button.get_style_context ().add_class (Gtk.STYLE_CLASS_SUGGESTED_ACTION);
+        message_dialog.add_action_widget (hide_app_button, Gtk.ResponseType.CLOSE);
+
+        message_dialog.response.connect ((response_id) => {
+            if (response_id == Gtk.ResponseType.ACCEPT) {
+                close_app_button.sensitive = false;
+                hide_app_button.sensitive = false;                    
+
+                virtual_display.reset_display_modes (); //FUNCTION DOES NOT WORK AS INTENDED
+                display_network.close_socket_server ();
+                this.quit ();
+            } else if (response_id == Gtk.ResponseType.CLOSE) {
+                message_dialog.destroy ();                    
+                this.hold ();
+                window.hide ();                    
+            } 
+        });    
+    }    
 }
 
 public static int main (string[] args) {

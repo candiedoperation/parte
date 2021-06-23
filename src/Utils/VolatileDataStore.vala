@@ -72,9 +72,11 @@ public class Parte.Utils.VolatileDataStore : GLib.Object {
         Json.Object nearby_displays = data_store.get_object_member ("display-nearby");
         nearby_displays.remove_member (IP_Address);
         data_store.set_object_member ("display-nearby", nearby_displays);
+        
+        display_list_refreshed (nearby_displays);        
     }
     
-    public string [] get_nearby_display (string IP_Address) {
+    public string [] get_nearby_display_info (string IP_Address) {
         Json.Object nearby_displays = data_store.get_object_member ("display-nearby");
         if (nearby_displays.get_object_member (IP_Address) == null) { 
             return ({ "" }); 
@@ -87,6 +89,17 @@ public class Parte.Utils.VolatileDataStore : GLib.Object {
                 }
             ); 
         }
+    }
+    
+    public string [] get_nearby_displays () {
+        string [] return_nearby_displays = {};
+        
+        Json.Object nearby_displays = data_store.get_object_member ("display-nearby");
+        nearby_displays.get_members ().foreach ((member) => {
+            return_nearby_displays += member;
+        });
+        
+        return return_nearby_displays;
     }
     
     construct {}

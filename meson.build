@@ -19,13 +19,13 @@ executable(
     'src/Utils/VirtualDisplayViewer.vala',
     'src/Utils/VirtualDisplayEnvironment.vala',          
     dependencies: [
-        dependency('gtk+-3.0'),
-        dependency('glib-2.0'),
-        dependency('granite'),
-        dependency('libhandy-1'),
+        dependency('gtk+-3.0'), #Ubuntu Package elementary-sdk
+        dependency('glib-2.0'), #Ubuntu Package elementary-sdk
+        dependency('granite'), #Ubuntu Package elementary-sdk
+        dependency('libhandy-1'), #Ubuntu Package elementary-sdk
         dependency('json-glib-1.0'),
         dependency('gtk-vnc-2.0'), #Ubuntu Package libgtk-vnc-2.0-dev
-        dependency('libnm'),
+        dependency('libnm'), #Ubuntu Package libnm-dev
         dependency('xcb'),
         dependency('xcb-render'),#DEPENDS ON XCB                
         dependency('xcb-randr'), #DEPENDS ON XCB-RENDER
