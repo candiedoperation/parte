@@ -91,6 +91,7 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         display_network.network_disconnected.connect (() => {
             welcome_parte.get_button_from_index (0).sensitive = false;
             welcome_parte.get_button_from_index (1).sensitive = false;
+            main_carousel.scroll_to (welcome_parte);
             hdy_header.pack_end (network_alert);            
         });
         

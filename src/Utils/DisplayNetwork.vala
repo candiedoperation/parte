@@ -24,6 +24,8 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     private Parte.Utils.VolatileDataStore volatile_data_store;
     private Gtk.Application application;
     private string this_display_beacon;
+    private string current_ip;
+    private string current_subnet;
     public signal void network_connected ();
     public signal void network_disconnected ();
     public signal void request_app_notification (GLib.Notification notification);
@@ -41,21 +43,36 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     public DisplayNetwork () {
         application = (Gtk.Application) GLib.Application.get_default ();
         volatile_data_store = Parte.Utils.VolatileDataStore.instance;
+        current_ip = "192.168.30.217";
+        current_subnet = current_ip.substring (0, current_ip.last_index_of (".") + 1);
         
         //Check Network Connection Status and signal Listeners
         network_monitor = NetworkMonitor.get_default ();
-        check_network_status (network_monitor.network_available);
         
-        //INITIALIZE SOCKET COMMUNICATION CAPABILITIES
+        if (network_monitor.network_available == true) {
+            current_ip = get_connection_ip ();
+            current_subnet = current_ip.substring (0, current_ip.last_index_of (".") + 1);
+            broadcast_this_display ();            
+        }        
+        
         try {
             create_socket_server ();        
         } catch (GLib.Error e) {
             print ("ERR: FAILED TO INITIALIZE COMMUNICATION SOCKET");
-            //THROW ERROR TO USER
         }
         
         network_monitor.network_changed.connect ((network_status) => {
-            check_network_status (network_status);
+            if (network_status == true && network_monitor.network_available == false) {
+                network_disconnected ();
+            } else if (network_status == true && network_monitor.network_available == true && get_connection_ip () != "") {
+                print ("New IP: %s, NETSTAT: %s\n", get_connection_ip (), network_status.to_string ());
+                current_ip = get_connection_ip ();
+                current_subnet = current_ip.substring (0, current_ip.last_index_of (".") + 1);
+                broadcast_this_display ();                
+                network_connected ();
+            } else {
+                network_disconnected ();
+            }
         });
     }
     
@@ -68,11 +85,9 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
 		});
 
 		service.start ();
-		broadcast_this_display ();
     }
     
     public void broadcast_this_display () {
-        string current_ip = get_connection_ip ();
         Json.Object this_display_info = new Json.Object ();
         this_display_info.set_string_member ("display-uuid", "123456"); //GET DEFINED UUID FROM DB
         this_display_info.set_string_member ("display-name", Environment.get_host_name ()); //GET COMPUTER NAME FROM OS INFO
@@ -86,29 +101,30 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         this_display_beacon = Json.to_string (this_display_node, false);
         string beacon_message = "BEAC:" + this_display_beacon; //No Pretty Printing
         
-        int device = 1;
-        Thread<void> broadcast_thread = new Thread<void>.try ("broadcast_device_" + device.to_string (), () => { send_device_beacon (device, current_ip.substring (0, current_ip.last_index_of (".") + 1), beacon_message); });
+        Thread<void> broadcast_thread = new Thread<void>.try ("broadcast_device_1", () => { send_device_beacon (1, beacon_message); });
     }    
     
-    public void send_device_beacon (int device, string subnet, string beacon_message = "") {
-        if (device < 255) {
-            print ("BROADCASTING: %s\n", subnet + device.to_string ());
-            Thread<void> broadcast_thread = new Thread<void>.try ("broadcast_device_" + (device + 1).to_string (), () => { send_device_beacon ((device + 1), subnet, beacon_message); });            
-        }
-        
-        //IPv4 ITERATOR, THIS IS A SYNCHRONOUS FUNCTION, USE OF Thread<void> RECOMMENDED
-        try {
-            SocketClient socket_client = new SocketClient ();
-            socket_client.timeout = 10; // PULLS ALL THREADS DOWN IN 10 SECONDS
-            SocketConnection socket_connection;
+    public void send_device_beacon (int device, string beacon_message = "") {
+        //IPv4 ITERATOR, THIS IS A SYNCHRONOUS FUNCTION, USE OF Thread<void> RECOMMENDED            
+        if (network_monitor.network_available == true && current_ip != "") {
+            if (device < 255) {
+                print ("BROADCASTING: %s\n", current_subnet + device.to_string ());
+                Thread<void> broadcast_thread = new Thread<void>.try ("broadcast_device_" + (device + 1).to_string (), () => { send_device_beacon ((device + 1), beacon_message); });            
+            }
 
-            socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (subnet + device.to_string ()), 5899));
-            socket_connection.output_stream.write (beacon_message.data);            
-        } catch (GLib.Error e) {
-            print ("NET_DEVICE (%s): %s\n", device.to_string (), e.message);
-        } catch (GLib.IOError e) {
-            print ("NET_DEVICE (%s): %s\n", device.to_string (), e.message);
-        }        
+            try {
+                SocketClient socket_client = new SocketClient ();
+                socket_client.timeout = 10; // PULLS ALL THREADS DOWN IN 10 SECONDS
+                SocketConnection socket_connection;
+
+                socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (current_subnet + device.to_string ()), 5899));
+                socket_connection.output_stream.write (beacon_message.data);            
+            } catch (GLib.Error e) {
+                print ("NET_DEVICE (%s): %s\n", device.to_string (), e.message);
+            } catch (GLib.IOError e) {
+                print ("NET_DEVICE (%s): %s\n", device.to_string (), e.message);
+            }            
+        }
     }
     
     private void reply_device_beacon (string IP_Address, string beacon_msg) {
@@ -197,7 +213,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
                 SocketConnection socket_connection;
 
                 socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (display), 5899));
-                socket_connection.output_stream.write (("BDEL:" + get_connection_ip ()).data);            
+                socket_connection.output_stream.write (("BDEL:" + current_ip).data);            
             } catch (GLib.Error e) {
                 print ("NET_DEVICE (%s): %s\n", display.to_string (), e.message);
             } catch (GLib.IOError e) {
@@ -209,14 +225,10 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     }
 
     public void request_network_check () {
-        check_network_status (network_monitor.network_available);
-    }
-
-    private void check_network_status (bool network_available) {
-        if (network_available == false) {
-            network_disconnected ();
-        } else {
+        if (network_monitor.network_available == true) {
             network_connected ();
+        } else {
+            network_disconnected ();
         }
     }
     

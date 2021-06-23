@@ -24,6 +24,7 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
     private Parte.Utils.DisplayNetwork display_network;
     private Parte.Utils.VolatileDataStore volatile_data_store;
     private Gtk.Application application;
+    private string current_ip;
     private string [] list_array_helper;
     
     static DisplayDiscovery _instance = null;
@@ -45,9 +46,10 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
         display_network = Parte.Utils.DisplayNetwork.instance;
         volatile_data_store = Parte.Utils.VolatileDataStore.instance;
         volatile_data_store.display_list_refreshed.connect ((signal_handler, signal_data) => { update_display_list (signal_data); });
+        current_ip = display_network.get_connection_ip (); //UPDATE ON NETWORK CHANGE        
         list_array_helper = {};
                        
-        var connection_label = new Gtk.Label ("Connect to Display");
+        var connection_label = new Gtk.Label ("Available Displays");
         connection_label.hexpand = true;
         connection_label.xalign = (float) 0.0;
         connection_label.get_style_context ().add_class (Granite.STYLE_CLASS_H2_LABEL);
@@ -107,13 +109,15 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
         list_array_helper = {};
         display_list.get_children ().foreach ((child) => { child.destroy (); });
         nearby_displays.get_members ().foreach ((display) => {
-            display_list.insert (new Parte.Widgets.DisplayPairRow (nearby_displays.get_object_member (display).get_string_member ("display-name")), -1);
-            list_array_helper += display;
+            if (display != current_ip) {
+                display_list.insert (new Parte.Widgets.DisplayPairRow (nearby_displays.get_object_member (display).get_string_member ("display-name")), -1);
+                list_array_helper += display;                
+            }
         });
     }
     
     private void manual_connection () {
-        Gtk.Label IP_Addresss = new Gtk.Label (display_network.get_connection_ip ());
+        Gtk.Label IP_Addresss = new Gtk.Label (current_ip);
         IP_Addresss.hexpand = true;
         IP_Addresss.xalign = (float) 0.5;
         IP_Addresss.get_style_context ().add_class (Granite.STYLE_CLASS_H1_LABEL);
