@@ -60,7 +60,7 @@ public class Parte.App : Gtk.Application {
             Gtk.ButtonsType.NONE                
         );
 
-        message_dialog.transient_for = window;            
+        message_dialog.transient_for = window;
 
         Gtk.Button close_app_button = new Gtk.Button.with_label ("Close Parte");
         close_app_button.get_style_context ().add_class (Gtk.STYLE_CLASS_DESTRUCTIVE_ACTION);

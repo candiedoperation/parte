@@ -125,6 +125,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     
     private async void parse_client_message (SocketConnection connection, Cancellable cancellable) throws GLib.IOError, GLib.Error {
 		DataInputStream istream = new DataInputStream (connection.input_stream);
+		DataOutputStream ostream = new DataOutputStream (connection.output_stream);		
 
 		// Get the received message:
 		string message = yield istream.read_line_async (Priority.DEFAULT, cancellable);
@@ -135,7 +136,8 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
 		    display_info = Json.from_string (message.substring (5)).get_object ();
 		    display_info.get_members ().foreach ((member) => {
 		        volatile_data_store.add_nearby_display (member, display_info.get_object_member (member).get_string_member ("display-uuid"), display_info.get_object_member (member).get_string_member ("display-name"));
-                Thread<void> beacon_reply = new Thread<void>.try ("beacon_reply_" + member, () => { send_reply_beacon (member); });		        
+                //Thread<void> beacon_reply = new Thread<void>.try ("beacon_reply_" + member, () => { send_reply_beacon (member); });
+                ostream.put_string ("ACK_BEAC:" + this_display_beacon);		        
 		    });
 		} else if (message.has_prefix ("ACK_BEAC:")) {
 		    Json.Object display_info = new Json.Object ();
@@ -144,7 +146,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
 		        volatile_data_store.add_nearby_display (member, display_info.get_object_member (member).get_string_member ("display-uuid"), display_info.get_object_member (member).get_string_member ("display-name"));
 		    });		
 		} else if (message.has_prefix ("REQT:")) {
-		
+		    // GET REQUEST AND USE ACK_REQT TO ACKNOWLEDGE REQUEST AND STRT TO START STREAM
 		} else if (message.has_prefix ("BDEL:")) {
 		    volatile_data_store.remove_nearby_display (message.substring (5));
 		} else if (message.has_prefix ("DISP:")) {
@@ -152,6 +154,10 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
 		} else {
 		    print (message);
 		}
+    }
+    
+    public async void send_socket_message (string IP_Address, string message) {
+        
     }
     
     public void close_socket_server () {

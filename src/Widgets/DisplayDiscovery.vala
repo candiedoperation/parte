@@ -65,6 +65,10 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
         display_list.hexpand = true;
         display_list.vexpand = true;
         
+        display_list.row_activated.connect ((selected_display) => {
+            print (selected_display.get_index ().to_string ());
+        });
+        
         Gtk.ScrolledWindow scrollable_list = new Gtk.ScrolledWindow (null, null);
         scrollable_list.add (display_list);
         scrollable_list.hexpand = true;
