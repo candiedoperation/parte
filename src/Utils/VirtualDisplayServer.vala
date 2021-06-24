@@ -93,5 +93,13 @@ public class Parte.Utils.VirtualDisplayServer : GLib.Object {
 		}
 
 		return true;
+	}
+	
+	public void destroy_server () {
+		try {
+			Process.spawn_command_line_sync ("killall x11vnc");			
+		} catch (SpawnError e) {
+			print ("FAILED TO TERMINATE DISPLAY STREAMING SERVER");
+		}		
 	}    
 }

@@ -81,6 +81,7 @@ public class Parte.App : Gtk.Application {
 
                 virtual_display.reset_display_modes (); //FUNCTION DOES NOT WORK AS INTENDED
                 display_network.close_socket_server ();
+                Parte.Utils.VirtualDisplayServer.instance.destroy_server ();
                 this.quit ();
             } else if (response_id == Gtk.ResponseType.CLOSE) {
                 message_dialog.destroy ();                    
