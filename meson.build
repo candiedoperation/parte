@@ -11,6 +11,7 @@ executable(
     'src/MainWindow.vala',
     'src/Widgets/ConnectionStatus.vala',
     'src/Widgets/StatusMessage.vala',
+    'src/Widgets/DisplayConnected.vala',
     'src/Widgets/DisplayDiscovery.vala',
     'src/Widgets/DisplayPairRow.vala',
     'src/Utils/GTFStandard.vala',

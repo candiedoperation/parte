@@ -28,6 +28,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     private string this_display_beacon;
     private string current_ip;
     private string current_subnet;
+    public signal void display_connected (Json.Object display_stats);
     public signal void network_connected ();
     public signal void network_disconnected ();
     public signal void view_display_stream (string IP_Address);
@@ -242,6 +243,10 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         virtual_display.create_environment (m_width, m_height, m_dotclock);
         virtual_display_server.server_initialized.connect (() => { Thread<void> reply_virt_thread = new Thread<void>.try ("virt_reply_" + member, () => { reply_device_beacon (member, ("OPN_CONN:" + this_display_beacon)); }); });        
         virtual_display_server.StartDisplayServer (member, ("%sx%s+%s+0".printf (m_width.to_string (), m_height.to_string (), (virtual_display.get_primary_monitor ().get_double_member ("m-width") - m_width).to_string ())));
+        
+        Json.Object connection_stats = new Json.Object ();
+        connection_stats.set_string_member ("display-name", env_info.get_object_member (member).get_string_member ("display-name"));
+        display_connected (connection_stats);
     }
     
     private void init_virtual_stream (string message) {

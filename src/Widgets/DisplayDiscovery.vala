@@ -26,6 +26,7 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
     private Gtk.Application application;
     private string current_ip;
     private string [] list_array_helper;
+    public signal void authenticating ();    
     
     static DisplayDiscovery _instance = null;
     public static DisplayDiscovery instance {
@@ -73,6 +74,7 @@ public class Parte.Widgets.DisplayDiscovery : Gtk.Grid {
         display_list.vexpand = true;
         
         display_list.row_activated.connect ((selected_display) => {
+            authenticating ();
             display_network.send_socket_message (list_array_helper [selected_display.get_index ()], ("REQT:" + display_network.get_this_display_beacon ()));
         });
         

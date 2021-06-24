@@ -25,6 +25,8 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
     private Hdy.HeaderBar hdy_header;
     private Hdy.Carousel main_carousel;
     private Parte.Utils.VirtualDisplayViewer display_viewer;
+    private Parte.Widgets.DisplayConnected display_connected;    
+    private Parte.Widgets.ConnectionStatus connection_progress;    
     private Parte.Widgets.DisplayDiscovery display_finder;
     private Parte.Utils.DisplayNetwork display_network;
     public signal void hide_application (); 
@@ -63,7 +65,10 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
             display_viewer.show_all ();
             main_carousel.scroll_to (welcome_parte);
             hide_application ();            
-        });        
+        });
+        
+        connection_progress = new Parte.Widgets.ConnectionStatus ();
+        display_connected = new Parte.Widgets.DisplayConnected ();                
         
         main_carousel = new Hdy.Carousel ();
         main_carousel.hexpand = true;
@@ -72,6 +77,8 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         
         main_carousel.insert (welcome_parte, -1);
         main_carousel.insert (display_finder, -1);
+        main_carousel.insert (connection_progress, -1);
+        main_carousel.insert (display_connected, -1);        
         
         Gtk.Image network_alert = new Gtk.Image ();
         network_alert.gicon = new ThemedIcon ("network-wired-disconnected");
@@ -88,6 +95,16 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         hdy_grid = new Gtk.Grid ();
         hdy_grid.attach (hdy_header, 0, 0);
         hdy_grid.attach (main_carousel, 0, 1);
+        
+        display_finder.authenticating.connect (() => {
+            connection_progress.status_title = "Waiting for Confirmation";
+            main_carousel.scroll_to (connection_progress);
+        });
+        
+        display_network.display_connected.connect ((signal_handler, display_data) => {
+            display_connected.display_name = display_data.get_string_member ("display-name");
+            main_carousel.scroll_to (display_connected);            
+        });
         
         display_network.network_disconnected.connect (() => {
             welcome_parte.get_button_from_index (0).sensitive = false;
@@ -112,10 +129,9 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         });
         
         main_carousel.page_changed.connect ((current_page) => {
+            back_button.destroy ();
             switch (current_page) {
                 case 1: {
-                    back_button.destroy ();
-                    
                     back_button = new Gtk.Button ();
                     back_button.label = "Home";
                     back_button.get_style_context ().add_class (Granite.STYLE_CLASS_BACK_BUTTON);
