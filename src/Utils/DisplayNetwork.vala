@@ -242,14 +242,11 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
         virtual_display.create_environment (m_width, m_height, m_dotclock);
         
-        Thread<void> reply_virt_thread = new Thread<void>.try ("virt_reply_" + member, () => { reply_device_beacon (member, "OPN_CONN:" + message.substring (9)); });                
+        Thread<void> reply_virt_thread = new Thread<void>.try ("virt_reply_" + member, () => { reply_device_beacon (member, "OPN_CONN:" + current_ip); });                
     }
     
     private void init_virtual_stream (string message) {
-        Json.Object env_info = new Json.Object ();
-        env_info = Json.from_string (message.substring (9)).get_object ();
-        string member = env_info.get_members ().nth_data (0);
-        view_display_stream (member);                
+        view_display_stream (message.substring (9));                
     }    
 
     public void close_socket_server () {
