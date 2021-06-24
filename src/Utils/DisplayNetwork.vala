@@ -154,7 +154,6 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         else if (message.has_prefix ("ACK_BEAC:")) { acknowledge_received_beacon (message); }
 		else if (message.has_prefix ("REQT:")) { receive_connection_request (message); }
 		else if (message.has_prefix ("ACK_REQT:")) { on_connection_permitted (message); }
-		else if (message.has_prefix ("GET_DISP:")) { init_virtual_env (message); }
 		else if (message.has_prefix ("OPN_CONN:")) { init_virtual_stream (message); }		
 		else if (message.has_prefix ("BDEL:")) { volatile_data_store.remove_nearby_display (message.substring (5)); } 
 		else { print ("Probable External Source: " + message); }
@@ -207,30 +206,28 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     public void connection_permitted (string message) {
         Json.Object display_info = new Json.Object ();
         display_info = Json.from_string (message.substring (5)).get_object ();
-        application.withdraw_notification ("display_network");
         
         string member = display_info.get_members ().nth_data (0);
         volatile_data_store.set_current_connection (member);
-        Thread<void> beacon_reply = new Thread<void>.try ("connection_reply_" + member, () => { reply_device_beacon (member, ("ACK_REQT:" + this_display_beacon)); });        
+        application.withdraw_notification ("display_network");
+        
+        Json.Object this_display_info = new Json.Object ();
+        this_display_info.set_string_member ("display-uuid", "123456"); //GET DEFINED UUID FROM DB
+        this_display_info.set_string_member ("display-name", Environment.get_host_name ()); //GET COMPUTER NAME FROM OS INFO        
+        
+        Json.Object this_display_config = virtual_display.get_primary_monitor ();
+        this_display_info.set_object_member ("m-data", this_display_config);
+        
+        Json.Object display_reply = new Json.Object ();
+        display_reply.set_object_member (current_ip, this_display_info);
+        
+        Json.Node this_display_node = new Json.Node (Json.NodeType.OBJECT);
+        this_display_node.set_object (display_reply);
+
+        Thread<void> beacon_reply = new Thread<void>.try ("connection_reply_" + member, () => { reply_device_beacon (member, ("ACK_REQT:" + Json.to_string (this_display_node, false))); });        
     }
     
     private void on_connection_permitted (string message) {
-        //SHOW CONNECTING SPINNER
-        Json.Object display_info = new Json.Object ();
-        display_info = Json.from_string (message.substring (9)).get_object ();
-        string member = display_info.get_members ().nth_data (0);
-        volatile_data_store.set_current_connection (member);
-        
-        Json.Object this_display_config = virtual_display.get_primary_monitor ();
-        display_info.get_object_member (member).set_object_member ("m-data", this_display_config);
-        
-        Json.Node this_display_node = new Json.Node (Json.NodeType.OBJECT);
-        this_display_node.set_object (display_info);
-        
-        Thread<void> broadcast_thread = new Thread<void>.try ("reply_connection_reply_" + member, () => { reply_device_beacon (member, "GET_DISP:" + Json.to_string (this_display_node, false)); });        
-    }
-    
-    private void init_virtual_env (string message) {
         Json.Object env_info = new Json.Object ();
         env_info = Json.from_string (message.substring (9)).get_object ();
         
@@ -242,7 +239,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
         virtual_display.create_environment (m_width, m_height, m_dotclock);
         
-        Thread<void> reply_virt_thread = new Thread<void>.try ("virt_reply_" + member, () => { reply_device_beacon (member, "OPN_CONN:" + this_display_beacon); });                
+        Thread<void> reply_virt_thread = new Thread<void>.try ("virt_reply_" + member, () => { reply_device_beacon (member, ("OPN_CONN:" + this_display_beacon)); });        
     }
     
     private void init_virtual_stream (string message) {
