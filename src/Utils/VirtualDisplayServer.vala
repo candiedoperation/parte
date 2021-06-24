@@ -19,7 +19,8 @@
 */
 
 public class Parte.Utils.VirtualDisplayServer : GLib.Object {
-
+	public signal void server_initialized ();
+	
     static VirtualDisplayServer _instance = null;
     public static VirtualDisplayServer instance {
         get {
@@ -72,7 +73,7 @@ public class Parte.Utils.VirtualDisplayServer : GLib.Object {
 	    }                
     }
     
-	private static bool process_line (IOChannel channel, IOCondition condition, string stream_name) {
+	private bool process_line (IOChannel channel, IOCondition condition, string stream_name) {
 		if (condition == IOCondition.HUP) {
 			print ("%s: Display Server has been closed.\n", "VDS");
 			return false;
@@ -82,6 +83,7 @@ public class Parte.Utils.VirtualDisplayServer : GLib.Object {
 			string line;
 			channel.read_line (out line, null, null);
 			print ("%s: %s", "VDS", line);
+			if ("Listening for VNC connections on TCP port 43105" in line) { server_initialized (); }
 		} catch (IOChannelError e) {
 			print ("%s: VDS: IOChannelError: %s\n", "VDS", e.message);
 			return false;

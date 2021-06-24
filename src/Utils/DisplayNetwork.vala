@@ -236,14 +236,12 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         string member = env_info.get_members ().nth_data (0);
         double m_width = env_info.get_object_member (member).get_object_member ("m-data").get_double_member ("m-width");
         double m_height = env_info.get_object_member (member).get_object_member ("m-data").get_double_member ("m-height");
-        double m_dotclock = env_info.get_object_member (member).get_object_member ("m-data").get_double_member ("m-dotclock");
-        string display_clip = ("%sx%s+%s+0".printf (m_width.to_string (), m_height.to_string (), virtual_display.get_primary_monitor ().get_double_member ("m-width").to_string ()));        
+        double m_dotclock = env_info.get_object_member (member).get_object_member ("m-data").get_double_member ("m-dotclock");        
         
         Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
         virtual_display.create_environment (m_width, m_height, m_dotclock);
-        virtual_display_server.StartDisplayServer (member, display_clip);
-        
-        Thread<void> reply_virt_thread = new Thread<void>.try ("virt_reply_" + member, () => { reply_device_beacon (member, ("OPN_CONN:" + this_display_beacon)); });        
+        virtual_display_server.server_initialized.connect (() => { Thread<void> reply_virt_thread = new Thread<void>.try ("virt_reply_" + member, () => { reply_device_beacon (member, ("OPN_CONN:" + this_display_beacon)); }); });        
+        virtual_display_server.StartDisplayServer (member, ("%sx%s+%s+0".printf (m_width.to_string (), m_height.to_string (), (virtual_display.get_primary_monitor ().get_double_member ("m-width") - m_width).to_string ())));
     }
     
     private void init_virtual_stream (string message) {
