@@ -49,9 +49,6 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         
         var virt_display_view = new Parte.Utils.VirtualDisplayViewer ("192.168.30.47", "5900");
         
-        Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
-        //virtual_display.create_environment (1366, 768, 60);
-        
         display_network = Parte.Utils.DisplayNetwork.instance;
         
         Granite.Widgets.Welcome welcome_parte = new Granite.Widgets.Welcome ("Parte", "Extend Displays, Seamlessly.");

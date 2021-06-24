@@ -222,7 +222,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         volatile_data_store.set_current_connection (member);
         
         Json.Object this_display_config = virtual_display.get_primary_monitor ();
-        display_info.set_object_member ("m-data", this_display_config);
+        display_info.get_object_member (member).set_object_member ("m-data", this_display_config);
         
         Json.Node this_display_node = new Json.Node (Json.NodeType.OBJECT);
         this_display_node.set_object (display_info);
@@ -231,7 +231,16 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     }
     
     private void init_virtual_env (string message) {
-        print (message);
+        Json.Object env_info = new Json.Object ();
+        env_info = Json.from_string (message.substring (9)).get_object ();
+        
+        string member = env_info.get_members ().nth_data (0);
+        double m_width = env_info.get_object_member (member).get_object_member ("m-data").get_double_member ("m-width");
+        double m_height = env_info.get_object_member (member).get_object_member ("m-data").get_double_member ("m-height");
+        double m_dotclock = env_info.get_object_member (member).get_object_member ("m-data").get_double_member ("m-dotclock");
+        
+        Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
+        virtual_display.create_environment (m_width, m_height, m_dotclock);        
     }    
 
     public void close_socket_server () {

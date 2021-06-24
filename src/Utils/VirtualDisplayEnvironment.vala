@@ -140,6 +140,7 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
         Json.Object monitor_data = new Json.Object ();
         monitor_data.set_double_member ("m-width", (double) xcb_screen.width_in_pixels);
         monitor_data.set_double_member ("m-height", (double) xcb_screen.height_in_pixels);
+        monitor_data.set_double_member ("m-dotclock", (double) xcb_randr_connection.get_screen_info_reply (xcb_randr_connection.get_screen_info (virt_display_window)).rate);
         return monitor_data;
     }
     
