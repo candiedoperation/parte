@@ -124,5 +124,9 @@ public class Parte.Utils.GTFStandard : GLib.Object {
         return "Modeline \"" + RANDR_MODE_NAME + "\"  " + (EST_PIXEL_FREQ.to_string ()) + "  " + (OPT_HOR_RESOL.to_string ()) + " " + (HOR_SYNC_START.to_string ()) + " " + (HOR_SYNC_END.to_string ()) + " " + (HOR_WID_TOTAL.to_string ()) + "  " + (OPT_VERT_RESOL.to_string ()) + " " + (VER_SYNC_START.to_string ()) + " " + (VER_SYNC_END.to_string ()) + " " + (VER_HEIG_TOTAL.to_string ()) + "  " + "-HSync +Vsync\n";
     }
     
+    public string GET_VIRT_DISPLAY_LABEL (double client_width, double client_height, double server_width) {
+        return ("%sx%s+%s+0".printf (client_width.to_string (), client_height.to_string (), server_width.to_string ()));
+    }
+    
     construct {}
 }

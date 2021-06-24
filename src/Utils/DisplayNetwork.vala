@@ -22,6 +22,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     private NetworkMonitor network_monitor;
     private GLib.SocketService service;
     private Parte.Utils.VolatileDataStore volatile_data_store;
+    private Parte.Utils.VirtualDisplayEnvironment virtual_display;
     private Gtk.Application application;
     private string this_display_beacon;
     private string current_ip;
@@ -43,7 +44,8 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     public DisplayNetwork () {
         application = (Gtk.Application) GLib.Application.get_default ();
         volatile_data_store = Parte.Utils.VolatileDataStore.instance;
-        current_ip = "192.168.30.217";
+        virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
+        current_ip = "192.168.30.217"; //CHANGE AT LAST
         current_subnet = current_ip.substring (0, current_ip.last_index_of (".") + 1);
         
         //Check Network Connection Status and signal Listeners
@@ -150,7 +152,9 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
 
 		if (message.has_prefix ("BEAC:")) { received_beacon (message); }
         else if (message.has_prefix ("ACK_BEAC:")) { acknowledge_received_beacon (message); }
-		else if (message.has_prefix ("REQT:")) { receive_connection_request (message); } 
+		else if (message.has_prefix ("REQT:")) { receive_connection_request (message); }
+		else if (message.has_prefix ("ACK_REQT:")) { on_connection_permitted (message); }
+		else if (message.has_prefix ("GET_DISP:")) { init_virtual_env (message); }
 		else if (message.has_prefix ("BDEL:")) { volatile_data_store.remove_nearby_display (message.substring (5)); } 
 		else if (message.has_prefix ("DISP:")) {} 
 		else { print ("Probable External Source: " + message); }
@@ -179,7 +183,6 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         if (check_pairing_status (display_info.get_object_member (display_info.get_members ().nth_data (0)).get_string_member ("display-uuid")) == true) {
             //PROCEED CONNECTION WITHOUT CONFIRMATION
         } else {
-            //snotify
             GLib.SimpleAction allow_once = new GLib.SimpleAction ("allow-connect-once", null);
             allow_once.activate.connect (() => { connection_permitted (message); });
 
@@ -202,8 +205,34 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     }
 
     public void connection_permitted (string message) {
-        // ASK MONITOR PARAMS FROM OTHER DEVICE AND NEGOTIATE FOR CONNECTION
+        Json.Object display_info = new Json.Object ();
+        display_info = Json.from_string (message.substring (9)).get_object ();
+        application.withdraw_notification ("display_network");
+        
+        string member = display_info.get_members ().nth_data (0);
+        volatile_data_store.set_current_connection (member);
+        Thread<void> beacon_reply = new Thread<void>.try ("connection_reply_" + member, () => { reply_device_beacon (member, ("ACK_REQT:" + this_display_beacon)); });        
     }
+    
+    private void on_connection_permitted (string message) {
+        //SHOW CONNECTING SPINNER
+        Json.Object display_info = new Json.Object ();
+        display_info = Json.from_string (message.substring (5)).get_object ();
+        string member = display_info.get_members ().nth_data (0);
+        volatile_data_store.set_current_connection (member);
+        
+        Json.Object this_display_config = virtual_display.get_primary_monitor ();
+        display_info.set_object_member ("m-data", this_display_config);
+        
+        Json.Node this_display_node = new Json.Node (Json.NodeType.OBJECT);
+        this_display_node.set_object (display_info);
+        
+        Thread<void> broadcast_thread = new Thread<void>.try ("reply_connection_reply_" + member, () => { reply_device_beacon (member, "GET_DISP:" + Json.to_string (this_display_node, false)); });        
+    }
+    
+    private void init_virtual_env (string message) {
+        print (message);
+    }    
 
     public void close_socket_server () {
         foreach (string display in volatile_data_store.get_nearby_displays ()) {

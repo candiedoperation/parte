@@ -36,7 +36,7 @@ public class Parte.Utils.VolatileDataStore : GLib.Object {
         data_store = new Json.Object ();
         data_store.set_object_member ("display-modes", new Json.Object ());
         data_store.set_object_member ("display-nearby", new Json.Object ());
-        data_store.set_boolean_member ("is-display-busy", false);
+        data_store.set_string_member ("current-display-connection", "");
     }
     
     public void add_display_mode (string mode_name, string mode_id) {
@@ -103,12 +103,12 @@ public class Parte.Utils.VolatileDataStore : GLib.Object {
         return return_nearby_displays;
     }
     
-    public void set_busy_state (bool state) {
-        data_store.set_boolean_member ("is-display-busy", state);
+    public void set_current_connection (string connection) {
+        data_store.set_string_member ("current-display-connection", connection);
     }
     
-    public bool get_busy_state () {
-        return data_store.get_boolean_member ("is-display-busy");
+    public string get_busy_state () {
+        return data_store.get_string_member ("current-display-connection");
     }
     
     construct {}

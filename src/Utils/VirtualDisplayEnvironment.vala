@@ -24,6 +24,7 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
     private Xcb.RandR.GetScreenResourcesReply screen_resources; 
     private Xcb.RandR.Connection xcb_randr_connection;
     private Xcb.Window virt_display_window;
+    private Xcb.Screen xcb_screen;
     private Xcb.Connection xcb_connection;
     
     static VirtualDisplayEnvironment _instance = null;
@@ -43,7 +44,7 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
         xcb_randr_connection = Xcb.RandR.get_connection (xcb_connection); //Create an Xcb.RandR Connection        
         Xcb.Setup xcb_setup = xcb_connection.get_setup (); //Get XCB Setup
         Xcb.ScreenIterator xcb_screen_iterator = xcb_setup.roots_iterator (); //Iterate available Screens
-        Xcb.Screen xcb_screen = xcb_screen_iterator.data; //Get the first Screen
+        xcb_screen = xcb_screen_iterator.data; //Get the first Screen
         
         virt_display_window = xcb_connection.generate_id ();       
         xcb_connection.create_window (
@@ -133,6 +134,13 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
                 break;                
             }
         }        
+    }
+    
+    public Json.Object get_primary_monitor () {    
+        Json.Object monitor_data = new Json.Object ();
+        monitor_data.set_double_member ("m-width", (double) xcb_screen.width_in_pixels);
+        monitor_data.set_double_member ("m-height", (double) xcb_screen.height_in_pixels);
+        return monitor_data;
     }
     
     private void update_volatile_db () {
