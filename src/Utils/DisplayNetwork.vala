@@ -29,7 +29,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     private string current_subnet;
     public signal void network_connected ();
     public signal void network_disconnected ();
-    public signal void request_app_notification (GLib.Notification notification);
+    public signal void view_display_stream (string IP_Address);
     
     static DisplayNetwork _instance = null;
     public static DisplayNetwork instance {
@@ -155,8 +155,8 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
 		else if (message.has_prefix ("REQT:")) { receive_connection_request (message); }
 		else if (message.has_prefix ("ACK_REQT:")) { on_connection_permitted (message); }
 		else if (message.has_prefix ("GET_DISP:")) { init_virtual_env (message); }
+		else if (message.has_prefix ("GET_DISP:")) { init_virtual_stream (message); }		
 		else if (message.has_prefix ("BDEL:")) { volatile_data_store.remove_nearby_display (message.substring (5)); } 
-		else if (message.has_prefix ("DISP:")) {} 
 		else { print ("Probable External Source: " + message); }
     }
 
@@ -240,7 +240,16 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         double m_dotclock = env_info.get_object_member (member).get_object_member ("m-data").get_double_member ("m-dotclock");
         
         Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
-        virtual_display.create_environment (m_width, m_height, m_dotclock);        
+        virtual_display.create_environment (m_width, m_height, m_dotclock);
+        
+        Thread<void> reply_virt_thread = new Thread<void>.try ("virt_reply_" + member, () => { reply_device_beacon (member, "OPN_CONN:" + message); });                
+    }
+    
+    private void init_virtual_stream (string message) {
+        Json.Object env_info = new Json.Object ();
+        env_info = Json.from_string (message.substring (9)).get_object ();
+        string member = env_info.get_members ().nth_data (0);
+        view_display_stream (member);                
     }    
 
     public void close_socket_server () {

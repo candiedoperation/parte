@@ -21,36 +21,43 @@
 public class Parte.Utils.VirtualDisplayViewer : Gtk.Grid {
     private Vnc.Display vnc_display;
     private Gtk.Grid main_grid;
+    public string IP_Address { get; set; }
     public signal void hide_application ();
     public signal void request_fullscreen ();
     public signal void request_unfullscreen ();
             
-    public VirtualDisplayViewer (string IP_address, string IP_port) {
-        main_grid = new Gtk.Grid ();
-        main_grid.hexpand = true;
-        main_grid.vexpand = true;
-        
-        show_connecting ();
-        
-        vnc_display = new Vnc.Display ();
-        vnc_display.hexpand = true;
-        vnc_display.vexpand = true;
-        vnc_display.halign = Gtk.Align.CENTER;
-        vnc_display.valign = Gtk.Align.CENTER;
-        vnc_display.read_only = true;
-        vnc_display.lossy_encoding = true;        
-        vnc_display.open_host (IP_address, IP_port);
-        
-        vnc_display.vnc_error.connect (show_connect_error);
-        vnc_display.vnc_auth_failure.connect (show_auth_error);
-        vnc_display.vnc_initialized.connect (start_display_streaming);
-        vnc_display.vnc_disconnected.connect (end_display_streaming);
-        
-        add (main_grid);
-        show_all ();                     
+    public VirtualDisplayViewer () {
+                     
     }
     
-    construct {}
+    construct {
+        this.notify.connect (() => {
+            if (IP_Address != "") {
+                main_grid = new Gtk.Grid ();
+                main_grid.hexpand = true;
+                main_grid.vexpand = true;
+                
+                show_connecting ();
+                
+                vnc_display = new Vnc.Display ();
+                vnc_display.hexpand = true;
+                vnc_display.vexpand = true;
+                vnc_display.halign = Gtk.Align.CENTER;
+                vnc_display.valign = Gtk.Align.CENTER;
+                vnc_display.read_only = true;
+                vnc_display.lossy_encoding = true;        
+                vnc_display.open_host (IP_Address, "5900");
+                
+                vnc_display.vnc_error.connect (show_connect_error);
+                vnc_display.vnc_auth_failure.connect (show_auth_error);
+                vnc_display.vnc_initialized.connect (start_display_streaming);
+                vnc_display.vnc_disconnected.connect (end_display_streaming);
+                
+                add (main_grid);
+                show_all ();                
+            }
+        });        
+    }
         
     private void show_connecting () {
         var connection_status_widget = new Parte.Widgets.ConnectionStatus ();

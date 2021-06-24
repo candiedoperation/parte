@@ -24,6 +24,7 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
     private Gtk.Button back_button;
     private Hdy.HeaderBar hdy_header;
     private Hdy.Carousel main_carousel;
+    private Parte.Utils.VirtualDisplayViewer display_viewer;
     private Parte.Widgets.DisplayDiscovery display_finder;
     private Parte.Utils.DisplayNetwork display_network;
     public signal void hide_application (); 
@@ -47,9 +48,9 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
             gtk_settings.gtk_application_prefer_dark_theme = granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
         });
         
-        var virt_display_view = new Parte.Utils.VirtualDisplayViewer ("192.168.30.47", "5900");
-        
         display_network = Parte.Utils.DisplayNetwork.instance;
+        display_network.view_display_stream.connect ((signal_handler, IP_Address) => { view_display_stream (IP_Address); });
+        display_viewer = new Parte.Utils.VirtualDisplayViewer ();
         
         Granite.Widgets.Welcome welcome_parte = new Granite.Widgets.Welcome ("Parte", "Extend Displays, Seamlessly.");
         welcome_parte.hexpand = true;
@@ -127,16 +128,16 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
             }
         });
         
-        virt_display_view.hide_application.connect(() => {
+        display_viewer.hide_application.connect(() => {
             hide_application();
         });
         
-        virt_display_view.request_fullscreen.connect(() => {
+        display_viewer.request_fullscreen.connect(() => {
             this.fullscreen ();
             hdy_grid.remove (hdy_header);            
         });
         
-        virt_display_view.request_unfullscreen.connect(() => {
+        display_viewer.request_unfullscreen.connect(() => {
             this.unfullscreen ();
             hdy_grid.attach (hdy_header, 0, 0);            
         });                 
@@ -146,5 +147,10 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
                 
         display_network.request_network_check ();        
     }
+    
+    private void view_display_stream (string IP_Address) {
+        display_viewer.IP_Address = IP_Address;
+        main_carousel.insert (display_viewer, -1);
+    }    
 }
 
