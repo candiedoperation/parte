@@ -23,6 +23,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     private GLib.SocketService service;
     private Parte.Utils.VolatileDataStore volatile_data_store;
     private Parte.Utils.VirtualDisplayEnvironment virtual_display;
+    private Parte.Utils.VirtualDisplayServer virtual_display_server;    
     private Gtk.Application application;
     private string this_display_beacon;
     private string current_ip;
@@ -45,6 +46,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         application = (Gtk.Application) GLib.Application.get_default ();
         volatile_data_store = Parte.Utils.VolatileDataStore.instance;
         virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
+        virtual_display_server = Parte.Utils.VirtualDisplayServer.instance;
         current_ip = "192.168.30.217"; //CHANGE AT LAST
         current_subnet = current_ip.substring (0, current_ip.last_index_of (".") + 1);
         
@@ -80,7 +82,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     
     public void create_socket_server () throws GLib.Error {
 		service = new GLib.SocketService ();
-		service.add_inet_port (5899, this);
+		service.add_inet_port (43106, this);
 		service.incoming.connect ((connection, source_object) => {
 		    parse_client_message (connection, new Cancellable ());
 		    return false;
@@ -119,7 +121,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
                 socket_client.timeout = 10; // PULLS ALL THREADS DOWN IN 10 SECONDS
                 SocketConnection socket_connection;
 
-                socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (current_subnet + device.to_string ()), 5899));
+                socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (current_subnet + device.to_string ()), 43106));
                 socket_connection.output_stream.write (beacon_message.data);            
             } catch (GLib.Error e) {
                 print ("NET_DEVICE (%s): %s\n", device.to_string (), e.message);
@@ -135,7 +137,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
             socket_client.timeout = 10;
             SocketConnection socket_connection;
 
-            socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (IP_Address), 5899));
+            socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (IP_Address), 43106));
             socket_connection.output_stream.write (beacon_msg.data);            
         } catch (GLib.Error e) {
             print ("NET_DEVICE (%s) SEND_MSG: %s\n", IP_Address, e.message);
@@ -235,9 +237,11 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         double m_width = env_info.get_object_member (member).get_object_member ("m-data").get_double_member ("m-width");
         double m_height = env_info.get_object_member (member).get_object_member ("m-data").get_double_member ("m-height");
         double m_dotclock = env_info.get_object_member (member).get_object_member ("m-data").get_double_member ("m-dotclock");
+        string display_clip = ("%sx%s+%s+0".printf (m_width.to_string (), m_height.to_string (), virtual_display.get_primary_monitor ().get_double_member ("m-width").to_string ()));        
         
         Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
         virtual_display.create_environment (m_width, m_height, m_dotclock);
+        virtual_display_server.StartDisplayServer (member, display_clip);
         
         Thread<void> reply_virt_thread = new Thread<void>.try ("virt_reply_" + member, () => { reply_device_beacon (member, ("OPN_CONN:" + this_display_beacon)); });        
     }
@@ -256,7 +260,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
                 socket_client.timeout = 5; // PULLS ALL THREADS DOWN IN 10 SECONDS
                 SocketConnection socket_connection;
 
-                socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (display), 5899));
+                socket_connection = socket_client.connect (new InetSocketAddress (new InetAddress.from_string (display), 43106));
                 socket_connection.output_stream.write (("BDEL:" + current_ip).data);            
             } catch (GLib.Error e) {
                 print ("NET_DEVICE (%s): %s\n", display.to_string (), e.message);

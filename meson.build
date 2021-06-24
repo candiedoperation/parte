@@ -16,6 +16,7 @@ executable(
     'src/Utils/GTFStandard.vala',
     'src/Utils/DisplayNetwork.vala',    
     'src/Utils/VolatileDataStore.vala',
+    'src/Utils/VirtualDisplayServer.vala',
     'src/Utils/VirtualDisplayViewer.vala',
     'src/Utils/VirtualDisplayEnvironment.vala',          
     dependencies: [

@@ -23,7 +23,7 @@ public class Parte.Utils.VirtualDisplayViewer : Hdy.Window {
     private Gtk.Grid main_grid;
     private bool error;
             
-    public VirtualDisplayViewer (string IP_Address) {
+    public VirtualDisplayViewer (string IP_Address, string IP_Port = "43105") {
         this.fullscreen ();
         
         main_grid = new Gtk.Grid ();
@@ -39,7 +39,7 @@ public class Parte.Utils.VirtualDisplayViewer : Hdy.Window {
         vnc_display.valign = Gtk.Align.CENTER;
         vnc_display.read_only = true;
         vnc_display.lossy_encoding = true;        
-        vnc_display.open_host (IP_Address, "5900");
+        vnc_display.open_host (IP_Address, IP_Port);
         
         vnc_display.vnc_error.connect (show_connect_error);
         vnc_display.vnc_auth_failure.connect (show_auth_error);
