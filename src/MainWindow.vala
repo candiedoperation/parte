@@ -48,10 +48,6 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
             gtk_settings.gtk_application_prefer_dark_theme = granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
         });
         
-        display_network = Parte.Utils.DisplayNetwork.instance;
-        display_network.view_display_stream.connect ((signal_handler, IP_Address) => { view_display_stream (IP_Address); });
-        display_viewer = new Parte.Utils.VirtualDisplayViewer ();
-        
         Granite.Widgets.Welcome welcome_parte = new Granite.Widgets.Welcome ("Parte", "Extend Displays, Seamlessly.");
         welcome_parte.hexpand = true;
         welcome_parte.vexpand = true;
@@ -61,6 +57,13 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         welcome_parte.append ("preferences-system", "Preferences", "View and Modify Parte Settings.");          
         
         display_finder = Parte.Widgets.DisplayDiscovery.instance;
+        display_network = Parte.Utils.DisplayNetwork.instance;
+        display_network.view_display_stream.connect ((signal_handler, IP_Address) => {
+            display_viewer = new Parte.Utils.VirtualDisplayViewer (IP_Address);
+            display_viewer.show_all ();
+            main_carousel.scroll_to (welcome_parte);
+            hide_application ();            
+        });        
         
         main_carousel = new Hdy.Carousel ();
         main_carousel.hexpand = true;
@@ -126,31 +129,12 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
                     show_all ();                    
                 }
             }
-        });
-        
-        display_viewer.hide_application.connect(() => {
-            hide_application();
-        });
-        
-        display_viewer.request_fullscreen.connect(() => {
-            this.fullscreen ();
-            hdy_grid.remove (hdy_header);            
-        });
-        
-        display_viewer.request_unfullscreen.connect(() => {
-            this.unfullscreen ();
-            hdy_grid.attach (hdy_header, 0, 0);            
         });                 
         
         add(hdy_grid);
         show_all();
                 
         display_network.request_network_check ();        
-    }
-    
-    private void view_display_stream (string IP_Address) {
-        display_viewer.IP_Address = IP_Address;
-        main_carousel.insert (display_viewer, -1);
-    }    
+    }   
 }
 
