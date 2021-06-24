@@ -206,7 +206,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
 
     public void connection_permitted (string message) {
         Json.Object display_info = new Json.Object ();
-        display_info = Json.from_string (message.substring (9)).get_object ();
+        display_info = Json.from_string (message.substring (5)).get_object ();
         application.withdraw_notification ("display_network");
         
         string member = display_info.get_members ().nth_data (0);
@@ -217,7 +217,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     private void on_connection_permitted (string message) {
         //SHOW CONNECTING SPINNER
         Json.Object display_info = new Json.Object ();
-        display_info = Json.from_string (message.substring (5)).get_object ();
+        display_info = Json.from_string (message.substring (9)).get_object ();
         string member = display_info.get_members ().nth_data (0);
         volatile_data_store.set_current_connection (member);
         
