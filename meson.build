@@ -9,6 +9,7 @@ executable(
     meson.project_name(),
     'src/Application.vala',
     'src/MainWindow.vala',
+    'src/Widgets/SecondaryDisplay.vala',
     'src/Widgets/ConnectionStatus.vala',
     'src/Widgets/StatusMessage.vala',
     'src/Widgets/DisplayConnected.vala',
