@@ -19,14 +19,19 @@
 */
 
 public class Parte.Widgets.DisplayConnected : Gtk.Grid {
+    private Parte.Utils.DisplayNetwork display_network;
     public string display_name { get; set; }
+    public string display_desc { get; set; }
                 
     public DisplayConnected () {}
     
     construct {
+        display_network = Parte.Utils.DisplayNetwork.instance;
         display_name = "VIRTUAL DISPLAY 01";
+        display_desc = "Unable to Calculate Resolution";
         
         Gtk.Label connected_label_static = new Gtk.Label ("Display Connected");
+        connected_label_static.margin_bottom = 5;
         connected_label_static.get_style_context ().add_class (Granite.STYLE_CLASS_H1_LABEL);
         
         Gtk.Image display_logo = new Gtk.Image ();
@@ -38,19 +43,34 @@ public class Parte.Widgets.DisplayConnected : Gtk.Grid {
         connection_label.hexpand = true;
         connection_label.get_style_context ().add_class (Granite.STYLE_CLASS_H2_LABEL);
         
+        Gtk.Label description_label = new Gtk.Label (display_name);
+        description_label.get_style_context ().add_class (Granite.STYLE_CLASS_H3_LABEL);        
+        
         Gtk.Grid labels_grid = new Gtk.Grid ();
         labels_grid.vexpand = true;
         labels_grid.valign = Gtk.Align.CENTER;
         labels_grid.attach (connected_label_static, 0, 0);
-        labels_grid.attach (connection_label, 0, 1);        
+        labels_grid.attach (connection_label, 0, 1); 
+        labels_grid.attach (description_label, 0, 2);       
         
         Gtk.Grid connection_static = new Gtk.Grid ();
-        connection_static.column_spacing = 15;
+        connection_static.column_spacing = 18;
         connection_static.attach (display_logo, 0, 0);
         connection_static.attach (labels_grid, 1, 0);
         
+        Gtk.Button disconnect_button = new Gtk.Button.with_label ("Disconnect Display");
+        disconnect_button.margin = 10;
+        disconnect_button.get_style_context ().add_class (Gtk.STYLE_CLASS_DESTRUCTIVE_ACTION);
+        disconnect_button.clicked.connect (() => { display_network.disconnect_display (); });
+        
+        Gtk.Grid button_grid = new Gtk.Grid ();
+        button_grid.hexpand = true;
+        button_grid.halign = Gtk.Align.END;
+        button_grid.attach (disconnect_button, 0, 0);
+        
         this.notify.connect (() => {
             connection_label.label = display_name;
+            description_label.label = display_desc;
         });
         
         Gtk.Grid connection_status = new Gtk.Grid ();
@@ -59,9 +79,9 @@ public class Parte.Widgets.DisplayConnected : Gtk.Grid {
         connection_status.halign = Gtk.Align.CENTER;
         connection_status.valign = Gtk.Align.CENTER;
         connection_status.attach (connection_static, 0, 0);
-        //connection_status.attach (connection_dynamic, 0, 1);
         
-        add (connection_status);
+        this.attach (connection_status, 0, 0);
+        this.attach (button_grid, 0, 1);        
         show_all ();        
     }
 }

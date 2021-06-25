@@ -79,6 +79,7 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         main_carousel.insert (display_finder, -1);
         main_carousel.insert (connection_progress, -1);
         main_carousel.insert (display_connected, -1);        
+                
         
         Gtk.Image network_alert = new Gtk.Image ();
         network_alert.gicon = new ThemedIcon ("network-wired-disconnected");
@@ -103,7 +104,12 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         
         display_network.display_connected.connect ((signal_handler, display_data) => {
             display_connected.display_name = display_data.get_string_member ("display-name");
+            display_connected.display_desc = display_data.get_string_member ("display-desc");
             main_carousel.scroll_to (display_connected);            
+        });
+        
+        display_network.display_disconnected.connect (() => {
+            main_carousel.scroll_to (welcome_parte);
         });
         
         display_network.network_disconnected.connect (() => {

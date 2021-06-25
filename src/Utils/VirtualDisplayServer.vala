@@ -20,6 +20,7 @@
 
 public class Parte.Utils.VirtualDisplayServer : GLib.Object {
 	public signal void server_initialized ();
+	public signal void server_disconnected ();
 	
     static VirtualDisplayServer _instance = null;
     public static VirtualDisplayServer instance {
@@ -84,6 +85,7 @@ public class Parte.Utils.VirtualDisplayServer : GLib.Object {
 			channel.read_line (out line, null, null);
 			print ("%s: %s", "VDS", line);
 			if ("Listening for VNC connections on TCP port 43105" in line) { server_initialized (); }
+			else if ("viewer exited." in line) { server_disconnected (); }
 		} catch (IOChannelError e) {
 			print ("%s: VDS: IOChannelError: %s\n", "VDS", e.message);
 			return false;

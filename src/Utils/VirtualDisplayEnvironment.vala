@@ -136,6 +136,19 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
         }        
     }
     
+    public void use_display_mode (string mode_name) {
+        screen_resources = xcb_randr_connection.get_screen_resources_reply (xcb_randr_connection.get_screen_resources (virt_display_window));    
+        foreach (Xcb.RandR.Output output in screen_resources.outputs) {
+            Xcb.RandR.GetOutputInfoReply output_info = xcb_randr_connection.get_output_info_reply (xcb_randr_connection.get_output_info (output, screen_resources.config_timestamp));          
+            if (output_info.name.up () == "VIRTUAL1") {
+                
+                //COMPLETED ADDING ALL MODES TO VIRTUAL1
+                //TRY RESTARTING WINDOW MANAGER HERE
+                break;                
+            }
+        }        
+    }    
+    
     public Json.Object get_primary_monitor () {    
         Json.Object monitor_data = new Json.Object ();
         monitor_data.set_double_member ("m-width", (double) xcb_screen.width_in_pixels);

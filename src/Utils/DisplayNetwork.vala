@@ -29,6 +29,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
     private string current_ip;
     private string current_subnet;
     public signal void display_connected (Json.Object display_stats);
+    public signal void display_disconnected ();
     public signal void network_connected ();
     public signal void network_disconnected ();
     public signal void view_display_stream (string IP_Address);
@@ -57,7 +58,7 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         if (network_monitor.network_available == true) {
             current_ip = get_connection_ip ();
             current_subnet = current_ip.substring (0, current_ip.last_index_of (".") + 1);
-            broadcast_this_display ();            
+            broadcast_this_display ();     
         }        
         
         try {
@@ -241,11 +242,13 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         
         Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
         virtual_display.create_environment (m_width, m_height, m_dotclock);
-        virtual_display_server.server_initialized.connect (() => { Thread<void> reply_virt_thread = new Thread<void>.try ("virt_reply_" + member, () => { reply_device_beacon (member, ("OPN_CONN:" + this_display_beacon)); }); });        
+        virtual_display_server.server_initialized.connect (() => { Thread<void> reply_virt_thread = new Thread<void>.try ("virt_reply_" + member, () => { reply_device_beacon (member, ("OPN_CONN:" + this_display_beacon)); }); });
+        virtual_display_server.server_disconnected.connect (() => { display_disconnected (); });                
         virtual_display_server.StartDisplayServer (member, ("%sx%s+%s+0".printf (m_width.to_string (), m_height.to_string (), (virtual_display.get_primary_monitor ().get_double_member ("m-width") - m_width).to_string ())));
         
         Json.Object connection_stats = new Json.Object ();
         connection_stats.set_string_member ("display-name", env_info.get_object_member (member).get_string_member ("display-name"));
+        connection_stats.set_string_member ("display-desc", "%sx%s Resolution, %sHz Refresh Rate".printf (m_width.to_string (), m_height.to_string (), m_dotclock.to_string ()));
         display_connected (connection_stats);
     }
     
@@ -254,6 +257,12 @@ public class Parte.Utils.DisplayNetwork : GLib.Object {
         display_info = Json.from_string (message.substring (9)).get_object ();
         string member = display_info.get_members ().nth_data (0);    
         view_display_stream (member);                
+    }
+    
+    public void disconnect_display () {
+        virtual_display_server.destroy_server (); 
+        volatile_data_store.set_current_connection ("");
+        display_disconnected ();
     }
 
     public void close_socket_server () {

@@ -57,6 +57,14 @@ public class Parte.Utils.VolatileDataStore : GLib.Object {
         return (display_modes.get_string_member (mode_name) == null) ? "" : display_modes.get_string_member (mode_name);
     }
     
+    public int get_display_mode_position (string mode_name) {
+        for (int iterator = 0; iterator < data_store.get_object_member ("display-modes").get_members ().length (), iterator++) {
+            if (data_store.get_object_member ("display-modes").get_members ().nth_data (iterator) == mode_name) {
+                return iterator;
+            }
+        }
+    }
+    
     public void add_nearby_display (string IP_Address, string display_uuid, string display_name) {
         Json.Object display_info = new Json.Object ();
         display_info.set_string_member ("display-uuid", display_uuid);
