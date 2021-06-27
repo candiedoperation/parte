@@ -18,14 +18,14 @@
     Authored By: Atheesh Thirumalairajan <candiedoperation@icloud.com>
 */
 
-public class Parte.Utils.VirtualDisplayViewer : Gtk.Grid {
+public class Parte.Utils.VirtualDisplayViewer : Hdy.Window {
     private Vnc.Display vnc_display;
     private Gtk.Grid main_grid;
-    public signal void hide_application ();
-    public signal void request_fullscreen ();
-    public signal void request_unfullscreen ();
+    private bool error;
             
-    public VirtualDisplayViewer (string IP_address, string IP_port) {
+    public VirtualDisplayViewer (string IP_Address, string IP_Port = "43105") {
+        this.fullscreen ();
+        
         main_grid = new Gtk.Grid ();
         main_grid.hexpand = true;
         main_grid.vexpand = true;
@@ -39,7 +39,7 @@ public class Parte.Utils.VirtualDisplayViewer : Gtk.Grid {
         vnc_display.valign = Gtk.Align.CENTER;
         vnc_display.read_only = true;
         vnc_display.lossy_encoding = true;        
-        vnc_display.open_host (IP_address, IP_port);
+        vnc_display.open_host (IP_Address, IP_Port);
         
         vnc_display.vnc_error.connect (show_connect_error);
         vnc_display.vnc_auth_failure.connect (show_auth_error);
@@ -61,29 +61,33 @@ public class Parte.Utils.VirtualDisplayViewer : Gtk.Grid {
     }
     
     private void start_display_streaming () {
-        request_fullscreen ();    
+        error = false;   
         main_grid.remove_row (0);
         main_grid.attach (vnc_display, 0, 0);
         show_all ();        
     }
     
     private void end_display_streaming () {
-        request_unfullscreen ();         
+        if (error == false) {
+            this.destroy ();            
+        }
     }
     
     private void show_connect_error (string error_message) {
+        error = true;
         var connection_error_widget = new Parte.Widgets.StatusMessage ("Unable to Connect Display", error_message.substring(error_message.last_index_of (":") + 1), "dialog-error");
         connection_error_widget.action_button.label = "Close Application";
-        connection_error_widget.action_button.clicked.connect (() => { hide_application (); });
+        connection_error_widget.action_button.clicked.connect (() => { this.destroy (); });
         main_grid.remove_row (0);
         main_grid.attach (connection_error_widget, 0, 0);
         show_all ();        
     }
     
     private void show_auth_error (string error_message) {
+        error = true;
         var connection_error_widget = new Parte.Widgets.StatusMessage ("Display Authentication Error", "Secondary Display Authentication Failed.", "dialog-error");
         connection_error_widget.action_button.label = "Close Application";
-        connection_error_widget.action_button.clicked.connect (() => { hide_application (); });
+        connection_error_widget.action_button.clicked.connect (() => { this.destroy (); });
         main_grid.remove_row (0);
         main_grid.attach (connection_error_widget, 0, 0);
         show_all ();        

@@ -20,27 +20,35 @@
 
 public class Parte.Widgets.ConnectionStatus : Gtk.Grid {
     public Gtk.Spinner connection_spinner;
+    public string status_title { get; set; }
                 
-    public ConnectionStatus () {
-                         
-    }
+    public ConnectionStatus () {}
     
     construct {
+        status_title = "Discovering Display";
+        
         connection_spinner = new Gtk.Spinner ();
-        connection_spinner.width_request = 48;
-        connection_spinner.height_request = 48;
+        connection_spinner.width_request = 38;
+        connection_spinner.height_request = 38;
         
-        var connection_label = new Gtk.Label ("Connecting to Display");
+        connection_spinner.start ();
+        
+        Gtk.Label connection_label = new Gtk.Label (status_title);
         connection_label.hexpand = true;
-        connection_label.get_style_context ().add_class (Granite.STYLE_CLASS_H1_LABEL);
+        connection_label.get_style_context ().add_class (Granite.STYLE_CLASS_H2_LABEL);
         
-        var connection_progress = new Gtk.Grid ();
+        this.notify.connect (() => {
+            connection_label.label = status_title;
+        });
+        
+        Gtk.Grid connection_progress = new Gtk.Grid ();
         connection_progress.hexpand = true;
         connection_progress.vexpand = true;
+        connection_progress.column_spacing = 10;
         connection_progress.halign = Gtk.Align.CENTER;
         connection_progress.valign = Gtk.Align.CENTER;
         connection_progress.attach (connection_spinner, 0, 0);
-        connection_progress.attach (connection_label, 0, 1);
+        connection_progress.attach (connection_label, 1, 0);
         
         add (connection_progress);
         show_all ();        

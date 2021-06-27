@@ -20,9 +20,15 @@
 
 public class Parte.MainWindow : Hdy.ApplicationWindow {
     //private static GLib.Settings settings;
-    private Gtk.Grid grid_main;
-    private Gtk.Grid hdy_grid;
+    private Gtk.Grid hdy_grid;   
+    private Gtk.Button back_button;
     private Hdy.HeaderBar hdy_header;
+    private Hdy.Carousel main_carousel;
+    private Parte.Utils.VirtualDisplayViewer display_viewer;
+    private Parte.Widgets.DisplayConnected display_connected;    
+    private Parte.Widgets.ConnectionStatus connection_progress;    
+    private Parte.Widgets.DisplayDiscovery display_finder;
+    private Parte.Utils.DisplayNetwork display_network;
     public signal void hide_application (); 
 
     public MainWindow () {
@@ -44,47 +50,113 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
             gtk_settings.gtk_application_prefer_dark_theme = granite_settings.prefers_color_scheme == Granite.Settings.ColorScheme.DARK;
         });
         
-        var virt_display_view = new Parte.Utils.VirtualDisplayViewer ("192.168.30.47", "5900");
-        
-        Parte.Utils.VirtualDisplayEnvironment virtual_display = Parte.Utils.VirtualDisplayEnvironment.instance;
-        //virtual_display.create_environment (1920, 1080, 60);
-        
         Granite.Widgets.Welcome welcome_parte = new Granite.Widgets.Welcome ("Parte", "Extend Displays, Seamlessly.");
-        welcome_parte.append ("emblem-shared", "Extend My Display", "Extend this display to some other Parte Display.");
+        welcome_parte.hexpand = true;
+        welcome_parte.vexpand = true;
+        welcome_parte.append ("preferences-system-sharing", "Extend My Display", "Extend this display to some other Parte Display.");
         welcome_parte.append ("video-display", "Use this as Secondary Display", "Use this as a secondary display for another computer.");
         welcome_parte.append ("emblem-synchronized", "View Paired Displays", "View Displays which are paired to this Computer.");        
-        welcome_parte.append ("preferences-system", "Preferences", "View and Modify Parte Settings.");
+        welcome_parte.append ("preferences-system", "Preferences", "View and Modify Parte Settings.");          
         
-        grid_main = new Gtk.Grid();
-        grid_main.attach (welcome_parte, 0, 0);
+        display_finder = Parte.Widgets.DisplayDiscovery.instance;
+        display_network = Parte.Utils.DisplayNetwork.instance;
+        display_network.view_display_stream.connect ((signal_handler, IP_Address) => {
+            display_viewer = new Parte.Utils.VirtualDisplayViewer (IP_Address);
+            display_viewer.show_all ();
+            main_carousel.scroll_to (welcome_parte);
+            hide_application ();            
+        });
+        
+        connection_progress = new Parte.Widgets.ConnectionStatus ();
+        display_connected = new Parte.Widgets.DisplayConnected ();                
+        
+        main_carousel = new Hdy.Carousel ();
+        main_carousel.hexpand = true;
+        main_carousel.vexpand = true;
+        main_carousel.interactive = false;
+        
+        main_carousel.insert (welcome_parte, -1);
+        main_carousel.insert (display_finder, -1);
+        main_carousel.insert (connection_progress, -1);
+        main_carousel.insert (display_connected, -1);        
+                
+        
+        Gtk.Image network_alert = new Gtk.Image ();
+        network_alert.gicon = new ThemedIcon ("network-wired-disconnected");
+        network_alert.pixel_size = 28;
+        network_alert.set_tooltip_text ("Network Disconnected");               
         
         hdy_header = new Hdy.HeaderBar ();
         hdy_header.title = "Parte";
         hdy_header.hexpand = true;
+        hdy_header.pack_end (network_alert);        
         hdy_header.show_close_button = true;
-        hdy_header.decoration_layout = "close:";
-        
-        unowned Gtk.StyleContext hdy_header_context = hdy_header.get_style_context ();
-        hdy_header_context.add_class ("default-decoration");               
+        hdy_header.decoration_layout = "close:";                       
         
         hdy_grid = new Gtk.Grid ();
         hdy_grid.attach (hdy_header, 0, 0);
-        hdy_grid.attach (grid_main, 0, 1);
+        hdy_grid.attach (main_carousel, 0, 1);
         
-        virt_display_view.hide_application.connect(() => { hide_application(); });
-        
-        virt_display_view.request_fullscreen.connect(() => {
-            this.fullscreen ();
-            hdy_grid.remove (hdy_header);            
+        display_finder.authenticating.connect (() => {
+            connection_progress.status_title = "Waiting for Confirmation";
+            main_carousel.scroll_to (connection_progress);
         });
         
-        virt_display_view.request_unfullscreen.connect(() => {
-            this.unfullscreen ();
-            hdy_grid.attach (hdy_header, 0, 0);            
+        display_network.display_connected.connect ((signal_handler, display_data) => {
+            display_connected.display_name = display_data.get_string_member ("display-name");
+            display_connected.display_desc = display_data.get_string_member ("display-desc");
+            main_carousel.scroll_to (display_connected);            
+        });
+        
+        display_network.display_disconnected.connect (() => {
+            main_carousel.scroll_to (welcome_parte);
+        });
+        
+        display_network.network_disconnected.connect (() => {
+            welcome_parte.get_button_from_index (0).sensitive = false;
+            welcome_parte.get_button_from_index (1).sensitive = false;
+            main_carousel.scroll_to (welcome_parte);
+            hdy_header.pack_end (network_alert);            
+        });
+        
+        display_network.network_connected.connect (() => {
+            welcome_parte.get_button_from_index (0).sensitive = true;
+            welcome_parte.get_button_from_index (1).sensitive = true;
+            hdy_header.remove (network_alert);            
+        });        
+        
+        welcome_parte.activated.connect ((select_index) => {
+            switch (select_index) {
+                case 0: {
+                    main_carousel.scroll_to (display_finder);
+                    break;                    
+                }
+            }
+        });
+        
+        main_carousel.page_changed.connect ((current_page) => {
+            back_button.destroy ();
+            switch (current_page) {
+                case 1: {
+                    back_button = new Gtk.Button ();
+                    back_button.label = "Home";
+                    back_button.get_style_context ().add_class (Granite.STYLE_CLASS_BACK_BUTTON);
+                    
+                    back_button.clicked.connect (() => {
+                        main_carousel.scroll_to (welcome_parte);
+                        back_button.destroy ();
+                    });
+                                     
+                    hdy_header.pack_start (back_button);
+                    show_all ();                    
+                }
+            }
         });                 
         
         add(hdy_grid);
         show_all();
-    }
+                
+        display_network.request_network_check ();        
+    }   
 }
 

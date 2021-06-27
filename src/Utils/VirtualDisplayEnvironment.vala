@@ -24,6 +24,7 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
     private Xcb.RandR.GetScreenResourcesReply screen_resources; 
     private Xcb.RandR.Connection xcb_randr_connection;
     private Xcb.Window virt_display_window;
+    private Xcb.Screen xcb_screen;
     private Xcb.Connection xcb_connection;
     
     static VirtualDisplayEnvironment _instance = null;
@@ -43,7 +44,7 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
         xcb_randr_connection = Xcb.RandR.get_connection (xcb_connection); //Create an Xcb.RandR Connection        
         Xcb.Setup xcb_setup = xcb_connection.get_setup (); //Get XCB Setup
         Xcb.ScreenIterator xcb_screen_iterator = xcb_setup.roots_iterator (); //Iterate available Screens
-        Xcb.Screen xcb_screen = xcb_screen_iterator.data; //Get the first Screen
+        xcb_screen = xcb_screen_iterator.data; //Get the first Screen
         
         virt_display_window = xcb_connection.generate_id ();       
         xcb_connection.create_window (
@@ -133,6 +134,27 @@ public class Parte.Utils.VirtualDisplayEnvironment : GLib.Object {
                 break;                
             }
         }        
+    }
+    
+    public void use_display_mode (string mode_name) {
+        screen_resources = xcb_randr_connection.get_screen_resources_reply (xcb_randr_connection.get_screen_resources (virt_display_window));    
+        foreach (Xcb.RandR.Output output in screen_resources.outputs) {
+            Xcb.RandR.GetOutputInfoReply output_info = xcb_randr_connection.get_output_info_reply (xcb_randr_connection.get_output_info (output, screen_resources.config_timestamp));          
+            if (output_info.name.up () == "VIRTUAL1") {
+                
+                //COMPLETED ADDING ALL MODES TO VIRTUAL1
+                //TRY RESTARTING WINDOW MANAGER HERE
+                break;                
+            }
+        }        
+    }    
+    
+    public Json.Object get_primary_monitor () {    
+        Json.Object monitor_data = new Json.Object ();
+        monitor_data.set_double_member ("m-width", (double) xcb_screen.width_in_pixels);
+        monitor_data.set_double_member ("m-height", (double) xcb_screen.height_in_pixels);
+        monitor_data.set_double_member ("m-dotclock", (double) xcb_randr_connection.get_screen_info_reply (xcb_randr_connection.get_screen_info (virt_display_window)).rate);
+        return monitor_data;
     }
     
     private void update_volatile_db () {

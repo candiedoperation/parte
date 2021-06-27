@@ -9,33 +9,40 @@ executable(
     meson.project_name(),
     'src/Application.vala',
     'src/MainWindow.vala',
+    'src/Widgets/SecondaryDisplay.vala',
     'src/Widgets/ConnectionStatus.vala',
     'src/Widgets/StatusMessage.vala',
+    'src/Widgets/DisplayConnected.vala',
+    'src/Widgets/DisplayDiscovery.vala',
+    'src/Widgets/DisplayPairRow.vala',
     'src/Utils/GTFStandard.vala',
+    'src/Utils/DisplayNetwork.vala',    
     'src/Utils/VolatileDataStore.vala',
+    'src/Utils/VirtualDisplayServer.vala',
     'src/Utils/VirtualDisplayViewer.vala',
     'src/Utils/VirtualDisplayEnvironment.vala',          
     dependencies: [
-        dependency('gtk+-3.0'),
-        dependency('glib-2.0'),
-        dependency('granite'),
-        dependency('libhandy-1'),
+        dependency('gtk+-3.0'), #Ubuntu Package elementary-sdk
+        dependency('glib-2.0'), #Ubuntu Package elementary-sdk
+        dependency('granite'), #Ubuntu Package elementary-sdk
+        dependency('libhandy-1'), #Ubuntu Package elementary-sdk
         dependency('json-glib-1.0'),
         dependency('gtk-vnc-2.0'), #Ubuntu Package libgtk-vnc-2.0-dev
+        dependency('libnm'), #Ubuntu Package libnm-dev
         dependency('xcb'),
-        dependency('xcb-render'),#DEPENDS ON XCB        
+        dependency('xcb-render'),#DEPENDS ON XCB                
         dependency('xcb-randr'), #DEPENDS ON XCB-RENDER
         meson.get_compiler('c').find_library('libm', required : true), #NEEDED FOR ROUNDING FUNCTIONS TO WORK IN GTFStandard.vala              
     ],
     install: true
 )
 
-# Install our .desktop file so the Applications Menu will see it
-# install_data(
-#     join_paths('data', 'parte.desktop'),
-#     install_dir: join_paths(get_option('datadir'), 'applications'),
-#     rename: meson.project_name() + '.desktop'
-# )
+#Install our .desktop file so the Applications Menu will see it
+install_data(
+    join_paths('data', 'parte.desktop'),
+    install_dir: join_paths(get_option('datadir'), 'applications'),
+    rename: meson.project_name() + '.desktop'
+)
 
 #  Install our .appdata.xml file so AppCenter will see it
 # install_data(
