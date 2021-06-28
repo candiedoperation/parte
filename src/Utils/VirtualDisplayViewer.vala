@@ -19,7 +19,7 @@
 */
 
 public class Parte.Utils.VirtualDisplayViewer : Hdy.Window {
-    private Vnc.Display vnc_display;
+    //private Vnc.Display vnc_display;
     private Gtk.Grid main_grid;
     private bool error;
             
@@ -32,7 +32,7 @@ public class Parte.Utils.VirtualDisplayViewer : Hdy.Window {
         
         show_connecting ();
         
-        vnc_display = new Vnc.Display ();
+        /*vnc_display = new Vnc.Display ();
         vnc_display.hexpand = true;
         vnc_display.vexpand = true;
         vnc_display.halign = Gtk.Align.CENTER;
@@ -44,7 +44,22 @@ public class Parte.Utils.VirtualDisplayViewer : Hdy.Window {
         vnc_display.vnc_error.connect (show_connect_error);
         vnc_display.vnc_auth_failure.connect (show_auth_error);
         vnc_display.vnc_initialized.connect (start_display_streaming);
-        vnc_display.vnc_disconnected.connect (end_display_streaming);
+        vnc_display.vnc_disconnected.connect (end_display_streaming);*/
+        
+        Spice.Session spice_session = new Spice.Session ();
+        spice_session.enable_audio = false;
+        spice_session.enable_usbredir = true;
+        spice_session.host = "192.168.30.217";
+        spice_session.port = "5900";
+        spice_session.password = "1";
+        
+        spice_session.channel_new.connect ((channel_data) => {
+            Spice.Display spice_display = new Spice.Display (spice_session, channel_data.channel_id);
+            main_grid.attach (spice_display, 0, 0);
+            show_all ();
+        });
+        
+        spice_session.connect ();
         
         add (main_grid);
         show_all ();                     
@@ -63,7 +78,7 @@ public class Parte.Utils.VirtualDisplayViewer : Hdy.Window {
     private void start_display_streaming () {
         error = false;   
         main_grid.remove_row (0);
-        main_grid.attach (vnc_display, 0, 0);
+        //main_grid.attach (vnc_display, 0, 0);
         show_all ();        
     }
     

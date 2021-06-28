@@ -27,6 +27,8 @@ executable(
         dependency('granite'), #Ubuntu Package elementary-sdk
         dependency('libhandy-1'), #Ubuntu Package elementary-sdk
         dependency('json-glib-1.0'),
+        dependency('spice-client-gtk-3.0'), #Ubuntu Package libspice-client-gtk-3.0-dev
+        dependency('spice-client-glib-2.0'), #Ubuntu Package libspice-client-glib-2.0-dev
         dependency('gtk-vnc-2.0'), #Ubuntu Package libgtk-vnc-2.0-dev
         dependency('libnm'), #Ubuntu Package libnm-dev
         dependency('xcb'),

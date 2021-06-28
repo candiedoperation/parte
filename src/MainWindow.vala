@@ -68,7 +68,9 @@ public class Parte.MainWindow : Hdy.ApplicationWindow {
         });
         
         connection_progress = new Parte.Widgets.ConnectionStatus ();
-        display_connected = new Parte.Widgets.DisplayConnected ();                
+        display_connected = new Parte.Widgets.DisplayConnected ();
+        
+        display_viewer = new Parte.Utils.VirtualDisplayViewer ("localhost", "5900");                
         
         main_carousel = new Hdy.Carousel ();
         main_carousel.hexpand = true;
